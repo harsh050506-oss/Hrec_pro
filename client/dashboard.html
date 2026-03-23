@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HREC – Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="vendor/chart.umd.min.js"></script>
+  </head>
+  <body class="theme-dark">
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="sidebar-top">
+          <div class="brand">HREC</div>
+          <div class="pill" id="rolePill">Role</div>
+        </div>
+
+        <nav class="nav" id="nav"></nav>
+
+        <div class="sidebar-bottom">
+          <button class="btn btn-ghost w100" id="themeToggle" type="button">Toggle theme</button>
+          <button class="btn btn-danger w100" id="logoutBtn" type="button">Logout</button>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div class="title" id="greetingText">Hello 👋</div>
+
+          <div class="row" style="gap: 12px; position: relative;">
+            <div id="profileMini" class="profile-mini profile-clickable">
+              <div id="profileAvatar" class="profile-avatar">U</div>
+              <div class="profile-meta">
+                <div id="profileName" class="profile-name">User</div>
+                <div id="profileRole" class="profile-role">Role</div>
+              </div>
+            </div>
+
+            <div id="profileDropdown" class="profile-dropdown hidden">
+              <div class="profile-dropdown-head">
+                <div id="profileDropdownName" class="profile-name">User</div>
+                <div id="profileDropdownEmail" class="profile-role">user@email.com</div>
+              </div>
+              <div class="profile-dropdown-divider"></div>
+              <button id="profileLogoutBtn" class="btn btn-ghost w100" type="button">Logout</button>
+            </div>
+
+            <div id="userChip" class="chip"></div>
+          </div>
+        </header>
+
+        <section class="content">
+          <div id="alert" class="alert hidden"></div>
+
+          <!-- HR: Jobs -->
+          <div class="panel hidden" data-panel="hr_jobs">
+            <div class="grid-2">
+              <div class="card">
+                <div class="card-title">Post a job</div>
+                <form id="jobForm" class="form">
+                  <label><span>Title</span><input name="title" required /></label>
+                  <label><span>Description</span><textarea name="description" rows="5" required></textarea></label>
+                  <label><span>Skills (comma separated)</span><input name="skills" placeholder="python, flask, mongodb" /></label>
+                  <button class="btn btn-primary" type="submit">Publish job</button>
+                </form>
+              </div>
+
+              <div class="card">
+                <div class="card-title">Jobs</div>
+                <div class="row">
+                  <input id="jobSearch" class="input" placeholder="Search jobs..." />
+                  <button class="btn btn-ghost" id="refreshJobs" type="button">Refresh</button>
+                </div>
+                <div id="jobsList" class="list"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- HR: Candidates -->
+          <div class="panel hidden" data-panel="hr_candidates">
+            <div class="card">
+              <div class="card-title">Candidates & Applications</div>
+
+              <div class="row wrap">
+                <input id="candSearch" class="input" placeholder="Job ID (optional)" />
+                <input id="skillFilter" class="input" placeholder="Skill filter (optional)" />
+                <input id="minScore" class="input" placeholder="Min score (0-100)" />
+                <select id="statusFilter" class="input">
+                  <option value="">Any status</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Accepted">Accepted</option>
+                  <option value="Rejected">Rejected</option>
+                </select>
+                <button class="btn btn-ghost" id="refreshApps" type="button">Refresh</button>
+              </div>
+
+              <div id="appsTable" class="table"></div>
+            </div>
+          </div>
+
+          <!-- HR: Tasks -->
+          <div class="panel hidden" data-panel="hr_tasks">
+            <div class="grid-2">
+              <div class="card">
+                <div class="card-title">Assign task to employee</div>
+                <form id="taskForm" class="form">
+                  <label><span>Employee</span><select name="employee_id" id="employeeSelect" required></select></label>
+                  <label><span>Title</span><input name="title" required /></label>
+                  <label><span>Description</span><textarea name="description" rows="4"></textarea></label>
+                  <button class="btn btn-primary" type="submit">Assign</button>
+                </form>
+              </div>
+
+              <div class="card">
+                <div class="card-title">All tasks</div>
+                <div class="row">
+                  <select id="taskStatusFilter" class="input">
+                    <option value="">All</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Completed">Completed</option>
+                  </select>
+                  <button class="btn btn-ghost" id="refreshTasks" type="button">Refresh</button>
+                </div>
+                <div id="tasksTable" class="table"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- HR: Performance -->
+          <div class="panel hidden" data-panel="hr_performance">
+            <div class="grid-2">
+              <div class="card">
+                <div class="card-title">Update employee performance</div>
+                <form id="perfForm" class="form">
+                  <label><span>Employee</span><select name="employee_id" id="perfEmployeeSelect" required></select></label>
+                  <label><span>HR rating (0-100)</span><input name="hr_rating" type="number" min="0" max="100" value="80" required /></label>
+                  <label><span>Feedback</span><textarea name="feedback" rows="4" placeholder="Optional feedback"></textarea></label>
+                  <button class="btn btn-primary" type="submit">Update</button>
+                </form>
+              </div>
+
+              <div class="card">
+                <div class="card-title">Performance chart</div>
+                <canvas id="perfChart" height="140"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- HR: Analytics -->
+          <div class="panel hidden" data-panel="hr_analytics">
+            <div class="grid-2">
+              <div class="card">
+                <div class="card-title">Hiring funnel</div>
+                <canvas id="funnelChart" height="140"></canvas>
+              </div>
+
+              <div class="card">
+                <div class="card-title">Performance (latest updates)</div>
+                <canvas id="perfSeriesChart" height="140"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Candidate: Jobs -->
+          <div class="panel hidden" data-panel="cand_jobs">
+            <div class="card">
+              <div class="card-title">Available jobs</div>
+              <div class="row">
+                <input id="candJobSearch" class="input" placeholder="Search jobs..." />
+                <button class="btn btn-ghost" id="candRefreshJobs" type="button">Refresh</button>
+              </div>
+              <div id="candJobsList" class="list"></div>
+            </div>
+          </div>
+
+          <!-- Candidate: Applications -->
+          <div class="panel hidden" data-panel="cand_apps">
+            <div class="card">
+              <div class="card-title">My applications</div>
+              <div class="row">
+                <select id="candStatusFilter" class="input">
+                  <option value="">All</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Accepted">Accepted</option>
+                  <option value="Rejected">Rejected</option>
+                </select>
+                <button class="btn btn-ghost" id="candRefreshApps" type="button">Refresh</button>
+              </div>
+              <div id="candAppsTable" class="table"></div>
+            </div>
+          </div>
+
+          <!-- Candidate: Resume -->
+          <div class="panel hidden" data-panel="cand_resume">
+            <div class="card">
+              <div class="card-title">Upload resume (PDF/DOCX)</div>
+              <form id="resumeForm" class="form">
+                <label><span>Job ID</span><input name="job_id" required /></label>
+                <label><span>Resume file</span><input type="file" name="file" accept=".pdf,.docx" required /></label>
+                <button class="btn btn-primary" type="submit">Upload & score</button>
+              </form>
+              <div id="resumeResult" class="muted"></div>
+              <div id="resumeAiCard" class="ai-card hidden"></div>
+            </div>
+          </div>
+
+          <!-- Candidate: Interview -->
+          <div class="panel hidden" data-panel="cand_interview">
+            <div class="grid-2">
+              <div class="card">
+                <div class="card-title">Start interview</div>
+                <form id="startInterviewForm" class="form">
+                  <label><span>Application ID</span><input name="application_id" required /></label>
+                  <button class="btn btn-primary" type="submit">Start / Resume</button>
+                </form>
+                <div class="muted">The interview is stored in MongoDB so you can come back later.</div>
+              </div>
+
+              <div class="card">
+                <div class="card-title">Chat interview</div>
+                <div id="chat" class="chat"></div>
+                <form id="chatForm" class="row">
+                  <input id="chatInput" class="input" placeholder="Type your answer..." />
+                  <button class="btn btn-primary" type="submit">Send</button>
+                </form>
+                <div class="row">
+                  <button class="btn btn-ghost" id="finishInterviewBtn" type="button">Finish interview</button>
+                  <div class="muted" id="chatMeta"></div>
+                </div>
+                <div id="finalInterviewCard" class="ai-card hidden" style="margin-top: 10px;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Employee: Tasks -->
+          <div class="panel hidden" data-panel="emp_tasks">
+            <div class="card">
+              <div class="card-title">My tasks</div>
+              <div class="row">
+                <select id="empTaskFilter" class="input">
+                  <option value="">All</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Completed">Completed</option>
+                </select>
+                <button class="btn btn-ghost" id="empRefreshTasks" type="button">Refresh</button>
+              </div>
+              <div id="empTasksTable" class="table"></div>
+            </div>
+          </div>
+
+          <!-- Employee: Performance -->
+          <div class="panel hidden" data-panel="emp_performance">
+            <div class="card">
+              <div class="card-title">My performance</div>
+              <div id="empPerfCard" class="kpi-grid"></div>
+            </div>
+          </div>
+
+          <!-- Notifications -->
+          <div class="panel hidden" data-panel="notifications">
+            <div class="card">
+              <div class="card-title">Notifications</div>
+              <button class="btn btn-ghost" id="refreshNotifs" type="button">Refresh</button>
+              <div id="notifList" class="list"></div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div
+      id="confirmModal"
+      class="hidden"
+      style="
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+      "
+    >
+      <div
+        style="
+          background: #111827;
+          padding: 20px;
+          border-radius: 16px;
+          width: 320px;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+          text-align: center;
+        "
+      >
+        <div id="confirmText" style="margin-bottom: 16px; font-weight: 600;">Are you sure?</div>
+        <div class="row wrap" style="gap: 10px; justify-content: center;">
+          <button id="confirmYes" class="btn btn-primary" type="button">Yes</button>
+          <button id="confirmNo" class="btn btn-ghost" type="button">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="candidateDetailModal"
+      class="hidden"
+      style="
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.82);
+  z-index: 999999;
+  padding: 24px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  backdrop-filter: none;
+  filter: none;
+"
+    >
+      <div
+        class="candidate-detail-shell"
+        style="
+  width: min(980px, 96vw);
+  margin: 40px auto;
+  padding: 22px;
+  padding-bottom: 28px;
+  border-radius: 24px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: #111827;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.45);
+  color: white;
+  position: relative;
+  z-index: 1000000;
+  opacity: 1;
+  filter: none;
+  backdrop-filter: none;
+  transform: none;
+"
+      >
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <div>
+            <div id="candidateDetailTitle" style="font-size:22px; font-weight:700;">Candidate Details</div>
+            <div id="candidateDetailSubtitle" class="muted" style="margin-top:4px;">
+              Review application, AI analysis, and interview results.
+            </div>
+          </div>
+          <button id="candidateDetailClose" class="btn btn-ghost" type="button">Close</button>
+        </div>
+
+        <div class="row wrap" style="gap:16px; margin-bottom:16px;">
+          <div class="kpi" style="min-width:170px;">
+            <div class="k">Candidate</div>
+            <div id="detailCandidateName" class="v" style="font-size:18px;">—</div>
+            <div id="detailCandidateEmail" class="muted">—</div>
+          </div>
+
+          <div class="kpi" style="min-width:170px;">
+            <div class="k">Job</div>
+            <div id="detailJobTitle" class="v" style="font-size:18px;">—</div>
+          </div>
+
+          <div class="kpi" style="min-width:140px;">
+            <div class="k">Status</div>
+            <div id="detailStatus" class="v" style="font-size:18px;">—</div>
+          </div>
+
+          <div class="kpi" style="min-width:140px;">
+            <div class="k">Resume Score</div>
+            <div id="detailResumeScore" class="v" style="font-size:18px;">—</div>
+          </div>
+
+          <div class="kpi" style="min-width:140px;">
+            <div class="k">Interview Score</div>
+            <div id="detailInterviewScore" class="v" style="font-size:18px;">—</div>
+          </div>
+
+          <div class="kpi" style="min-width:140px;">
+            <div class="k">Final Hiring Score</div>
+            <div id="detailFinalScore" class="v" style="font-size:18px;">—</div>
+            <div id="detailFinalDecision" class="muted" style="margin-top:4px;">—</div>
+          </div>
+        </div>
+
+        <div class="row wrap" style="gap:16px;">
+          <div class="list-item" style="flex:1; min-width:320px;">
+            <div class="ai-title">Resume AI Review</div>
+            <div id="detailResumeRecommendation" style="margin-bottom:10px;">—</div>
+            <div id="detailResumeSummary" class="ai-muted">—</div>
+
+            <div class="ai-muted" style="margin-top:12px;"><b>Strength Highlights:</b></div>
+            <div id="detailResumeStrengths" class="row wrap" style="gap:8px; margin-top:8px;"></div>
+
+            <div class="ai-muted" style="margin-top:12px;"><b>Improvement Areas:</b></div>
+            <div id="detailResumeWeaknesses" class="row wrap" style="gap:8px; margin-top:8px;"></div>
+          </div>
+
+          <div class="list-item" style="flex:1; min-width:320px;">
+            <div class="ai-title">Interview AI Review</div>
+            <div id="detailInterviewRecommendation" style="margin-bottom:10px;">—</div>
+            <div id="detailInterviewSummary" class="ai-muted">—</div>
+          </div>
+        </div>
+
+        <div style="margin-top:18px;">
+          <div class="ai-title" style="margin-bottom:10px;">Actions</div>
+          <div class="row wrap" style="gap:10px; padding-bottom:10px;">
+            <button id="detailAcceptBtn" class="btn btn-primary" type="button">Accept</button>
+            <button id="detailRejectBtn" class="btn btn-ghost" type="button">Reject</button>
+            <button id="detailPendingBtn" class="btn btn-ghost" type="button">Mark Pending</button>
+            <button id="detailScheduleBtn" class="btn btn-ghost" type="button">Schedule Interview</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+  id="scheduleModal"
+  class="hidden"
+  style="
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.72);
+    z-index:999999;
+    padding:24px;
+    overflow:auto;
+  "
+>
+  <div
+    class="candidate-detail-shell"
+    style="
+      width:min(460px, 94vw);
+      margin:80px auto;
+      padding:22px;
+      border-radius:22px;
+      position:relative;
+    "
+  >
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <div>
+        <div style="font-size:22px; font-weight:800;">Schedule Interview</div>
+        <div class="muted" style="margin-top:4px;">Select a date and time for the candidate interview.</div>
+      </div>
+      <button id="scheduleModalClose" class="btn btn-ghost" type="button">Close</button>
+    </div>
+
+    <div class="form">
+      <label>
+        <span>Interview Date & Time</span>
+        <input id="scheduleInterviewDateTime" type="datetime-local" />
+      </label>
+
+      <label>
+        <span>Optional Note</span>
+        <textarea id="scheduleInterviewNote" rows="3" placeholder="Add any note for the candidate..."></textarea>
+      </label>
+
+      <div class="row wrap" style="margin-top:6px;">
+        <button id="scheduleModalSave" class="btn btn-primary" type="button">Confirm Schedule</button>
+        <button id="scheduleModalCancel" class="btn btn-ghost" type="button">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+    <script src="script.js?v=chartsfix4"></script>
+  </body>
+</html>

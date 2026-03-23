@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HREC – AI HR & Recruitment System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="theme-dark">
+    <div class="auth-particles">
+      <span></span>
+      <span></span>
+      <span></span>
+      <span></span>
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+    <div class="auth-bg-orb auth-orb-1"></div>
+    <div class="auth-bg-orb auth-orb-2"></div>
+    <div class="auth-bg-orb auth-orb-3"></div>
+
+    <div class="auth-shell">
+      <div class="auth-card auth-card-split" id="authCard">
+        <div class="auth-border-glow"></div>
+        <!-- LEFT: FORM -->
+        <div class="auth-left">
+          <div class="auth-top">
+            <div>
+              <div class="brand">HREC</div>
+              <div class="muted">AI HR & Recruitment System</div>
+            </div>
+            <button class="btn btn-ghost" id="themeToggle" title="Toggle theme" type="button">☾</button>
+          </div>
+
+          <div class="tabs">
+            <button class="tab active" data-tab="login" type="button">Login</button>
+            <button class="tab" data-tab="register" type="button">Register</button>
+          </div>
+
+          <div id="alert" class="alert hidden"></div>
+
+          <form id="loginForm" class="form">
+            <label>
+              <span>Email</span>
+              <input type="email" name="email" placeholder="you@company.com" required />
+            </label>
+
+            <label>
+              <span>Password</span>
+              <input type="password" name="password" placeholder="••••••••" required />
+            </label>
+
+            <button class="btn btn-primary" type="submit">Login</button>
+
+            <label>
+              <span>Choose role for Google login</span>
+              <select id="googleRole" class="input">
+                <option value="Candidate">Candidate</option>
+                <option value="HR">HR</option>
+                <option value="Employee">Employee</option>
+              </select>
+            </label>
+
+            <button id="googleBtn" class="google-btn" type="button">
+              <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" />
+              Continue with Google
+            </button>
+          </form>
+
+          <form id="registerForm" class="form hidden">
+            <label>
+              <span>Name</span>
+              <input type="text" name="name" placeholder="Full name" />
+            </label>
+
+            <label>
+              <span>Email</span>
+              <input type="email" name="email" placeholder="you@company.com" required />
+            </label>
+
+            <label>
+              <span>Password</span>
+              <input type="password" name="password" placeholder="Create a password" required />
+            </label>
+
+            <label>
+              <span>Role</span>
+              <select name="role" required>
+                <option value="Candidate">Candidate</option>
+                <option value="Employee">Employee</option>
+                <option value="HR">HR</option>
+              </select>
+            </label>
+
+            <button class="btn btn-primary" type="submit">Create account</button>
+          </form>
+
+          <div class="foot muted">
+            Tip: set your MongoDB Atlas URI in <code>HREC_MONGODB_URI</code>.
+          </div>
+        </div>
+
+        <!-- RIGHT: WELCOME PANEL -->
+        <div class="auth-right">
+          <div class="auth-quote-wrap">
+            <div class="auth-mini-badge">Smart Hiring • Better Decisions</div>
+            <h1 class="auth-quote-title">
+              <span id="authTypewriter"></span><span class="type-caret">|</span>
+            </h1>
+            <p class="auth-quote-text">
+              Elevate hiring with an intelligent recruitment experience designed for speed,
+              clarity, and confident decision-making. From AI-powered screening to interviews,
+              employee tasks, and performance insights — everything lives in one refined platform.
+            </p>
+
+            <div class="auth-feature-list">
+              <div class="auth-feature-item">AI Resume Analysis</div>
+              <div class="auth-feature-item">Interview Assistance</div>
+              <div class="auth-feature-item">Task & Performance Tracking</div>
+              <div class="auth-feature-item">Role-based Smart Dashboard</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+      function runTypewriter() {
+        const el = document.getElementById("authTypewriter");
+        if (!el) return;
+    
+        const text = "Welcome to HREC.";
+        let i = 0;
+        el.textContent = "";
+    
+        const tick = () => {
+          if (i < text.length) {
+            el.textContent += text.charAt(i);
+            i += 1;
+            setTimeout(tick, 85);
+          }
+        };
+    
+        tick();
+      }
+    
+      window.addEventListener("load", () => {
+        setTimeout(() => {
+          document.getElementById("authCard")?.classList.add("auth-card-show");
+          setTimeout(runTypewriter, 420);
+        }, 120);
+      });
+    </script>
+  </body>
+</html>

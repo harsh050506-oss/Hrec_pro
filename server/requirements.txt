@@ -1,0 +1,9 @@
+Flask==3.0.3
+flask-cors==4.0.1
+pymongo==4.7.3
+PyJWT==2.9.0
+Werkzeug==3.0.3
+scikit-learn==1.5.1
+pdfminer.six==20240706
+python-docx==1.1.2
+openai

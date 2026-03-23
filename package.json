@@ -1,0 +1,15 @@
+{
+  "name": "hrec-desktop",
+  "version": "1.0.0",
+  "private": true,
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev:server": "python server/app.py",
+    "dev:electron": "electron ."
+  },
+  "dependencies": {
+    "electron": "^32.0.2"
+  }
+}
+
