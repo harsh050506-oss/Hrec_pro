@@ -262,12 +262,21 @@
           </div>
 
           <!-- Employee: Performance -->
-          <div class="panel hidden" data-panel="emp_performance">
-            <div class="card">
-              <div class="card-title">My performance</div>
-              <div id="empPerfCard" class="kpi-grid"></div>
-            </div>
-          </div>
+          <!-- Employee: Performance -->
+<div class="panel hidden" data-panel="emp_performance">
+  <div class="card">
+    <div class="row" style="justify-content: space-between; align-items: center; margin-bottom: 10px;">
+      <div class="card-title">My performance</div>
+      <button class="btn btn-ghost" id="refreshEmpPerf" type="button">Refresh</button>
+    </div>
+
+    <div id="empPerfCard" class="kpi-grid"></div>
+
+    <div style="margin-top: 18px;">
+      <canvas id="empPerfChart" height="140"></canvas>
+    </div>
+  </div>
+</div>
 
           <!-- Notifications -->
           <div class="panel hidden" data-panel="notifications">
@@ -474,6 +483,6 @@
       </div>
     </div>
 
-    <script src="script.js?v=chartsfix4"></script>
+    <script src="script.js?v=chartsfix5"></script>
   </body>
 </html>

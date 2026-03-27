@@ -6,6 +6,7 @@ window.location.origin;
 let hrecPerfChartInstance = null;
 let hrecFunnelChartInstance = null;
 let hrecPerfSeriesChartInstance = null;
+let hrecEmpPerfChartInstance = null;
 let selectedCandidateApplication = null;
 let currentInterview = null;
 window._hrApps = [];
@@ -1484,44 +1485,168 @@ async function renderHrAnalytics() {
 
 async function renderEmployeePerformance() {
   const wrap = qs("#empPerfCard");
+  const chartCanvas = qs("#empPerfChart");
   if (!wrap) return;
 
   try {
     const data = await api("/api/performance");
     const rows = data.performance || [];
 
-    wrap.innerHTML = rows.length
-      ? rows.map((r) => `
-        <div class="kpi">
-          <div class="k">Score</div>
-          <div class="v">${escapeHtml(r.score ?? 0)}</div>
-        </div>
+    if (!rows.length) {
+      wrap.innerHTML = `<div class="muted">No performance data found.</div>`;
+      if (hrecEmpPerfChartInstance) {
+        hrecEmpPerfChartInstance.destroy();
+        hrecEmpPerfChartInstance = null;
+      }
+      return;
+    }
 
-        <div class="kpi">
-          <div class="k">HR Rating</div>
-          <div class="v">${escapeHtml(r.hr_rating ?? 0)}</div>
-        </div>
+    const r = rows[0];
 
-        <div class="kpi">
-          <div class="k">Tasks Completed</div>
-          <div class="v">${escapeHtml(r.tasks_completed ?? 0)}</div>
-        </div>
+    const score = Number(r.score ?? 0);
+    const hrRating = Number(r.hr_rating ?? 0);
+    const completed = Number(r.tasks_completed ?? 0);
+    const pending = Number(r.tasks_pending ?? 0);
+    const feedback = r.feedback || "No feedback given yet.";
 
-        <div class="kpi">
-          <div class="k">Tasks Pending</div>
-          <div class="v">${escapeHtml(r.tasks_pending ?? 0)}</div>
-        </div>
+    wrap.innerHTML = `
+      <div class="kpi">
+        <div class="k">Score</div>
+        <div class="v">${escapeHtml(score)}</div>
+      </div>
 
-        <div class="kpi" style="grid-column: 1 / -1;">
-          <div class="k">HR Feedback</div>
-          <div class="v" style="font-size:16px; font-weight:600; margin-top:8px;">
-            ${escapeHtml(r.feedback || "No feedback given yet.")}
-          </div>
+      <div class="kpi">
+        <div class="k">HR Rating</div>
+        <div class="v">${escapeHtml(hrRating)}</div>
+      </div>
+
+      <div class="kpi">
+        <div class="k">Tasks Completed</div>
+        <div class="v">${escapeHtml(completed)}</div>
+      </div>
+
+      <div class="kpi">
+        <div class="k">Tasks Pending</div>
+        <div class="v">${escapeHtml(pending)}</div>
+      </div>
+
+      <div class="kpi" style="grid-column: 1 / -1;">
+        <div class="k">HR Feedback</div>
+        <div class="v" style="font-size:16px; font-weight:600; margin-top:8px;">
+          ${escapeHtml(feedback)}
         </div>
-      `).join("")
-      : `<div class="muted">No performance data found.</div>`;
+      </div>
+    `;
+
+    if (chartCanvas && window.Chart) {
+      if (hrecEmpPerfChartInstance) {
+        hrecEmpPerfChartInstance.destroy();
+        hrecEmpPerfChartInstance = null;
+      }
+
+      const ctx = chartCanvas.getContext("2d");
+
+      const barGradient = ctx.createLinearGradient(0, 0, 0, 320);
+      barGradient.addColorStop(0, "rgba(56, 189, 248, 0.95)");
+      barGradient.addColorStop(1, "rgba(37, 99, 235, 0.75)");
+
+      hrecEmpPerfChartInstance = new Chart(chartCanvas, {
+        type: "bar",
+        data: {
+          labels: ["Score", "HR Rating", "Tasks Completed", "Tasks Pending"],
+          datasets: [
+            {
+              label: "My Performance",
+              data: [score, hrRating, completed, pending],
+              backgroundColor: [
+                "rgba(139,92,246,0.85)",
+                "rgba(59,130,246,0.85)",
+                "rgba(34,197,94,0.85)",
+                "rgba(245,158,11,0.85)"
+              ],
+              borderColor: [
+                "#8b5cf6",
+                "#3b82f6",
+                "#22c55e",
+                "#f59e0b"
+              ],
+              borderWidth: 2,
+              borderRadius: 14,
+              borderSkipped: false,
+              maxBarThickness: 58
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: {
+            duration: 1400,
+            easing: "easeOutQuart"
+          },
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              backgroundColor: "#0f172a",
+              titleColor: "#ffffff",
+              bodyColor: "#e2e8f0",
+              borderColor: "#334155",
+              borderWidth: 1,
+              padding: 12
+            }
+          },
+          scales: {
+            x: {
+              ticks: {
+                color: "#cbd5e1",
+                font: {
+                  size: 12,
+                  weight: "600"
+                }
+              },
+              grid: {
+                display: false
+              }
+            },
+            y: {
+              beginAtZero: true,
+              max: 100,
+              ticks: {
+                color: "#94a3b8"
+              },
+              grid: {
+                color: "rgba(148,163,184,0.12)"
+              }
+            }
+          }
+        },
+        plugins: [
+          {
+            id: "empBarShadow",
+            beforeDatasetsDraw(chart) {
+              const { ctx } = chart;
+              ctx.save();
+              ctx.shadowColor = "rgba(59,130,246,0.25)";
+              ctx.shadowBlur = 16;
+              ctx.shadowOffsetY = 8;
+            },
+            afterDatasetsDraw(chart) {
+              chart.ctx.restore();
+            }
+          }
+        ]
+      });
+    }
   } catch (err) {
     wrap.innerHTML = `<div class="muted">${escapeHtml(err.message || "Failed to load employee performance")}</div>`;
+  }
+
+  const refreshBtn = qs("#refreshEmpPerf");
+  if (refreshBtn && refreshBtn.dataset.bound !== "1") {
+    refreshBtn.dataset.bound = "1";
+    refreshBtn.addEventListener("click", renderEmployeePerformance);
   }
 }
 
