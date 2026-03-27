@@ -1519,53 +1519,65 @@ async function renderEmployeePerformance() {
       hrecEmpPerfChartInstance = new Chart(chartCanvas, {
         type: "radar",
         data: {
-          labels: ["Overall Score", "HR Rating", "Tasks Completed", "Tasks Pending"],
+          labels: [
+            "Score",
+            "HR Rating",
+            "Completed",
+            "Pending"
+          ],
           datasets: [
             {
-              label: "My Performance",
+              label: "Performance",
               data: [score, hrRating, completed, pending],
-              backgroundColor: fillGradient,
+      
+              backgroundColor: "rgba(56, 189, 248, 0.15)",
               borderColor: "#38bdf8",
-              pointBackgroundColor: ["#8b5cf6", "#3b82f6", "#22c55e", "#f59e0b"],
+      
+              borderWidth: 3,
+              tension: 0.35, // smoother shape
+      
+              pointBackgroundColor: "#8b5cf6",
               pointBorderColor: "#ffffff",
               pointHoverBackgroundColor: "#ffffff",
               pointHoverBorderColor: "#38bdf8",
-              pointRadius: 5,
-              pointHoverRadius: 7,
-              borderWidth: 3
+      
+              pointRadius: 4,
+              pointHoverRadius: 6
             }
           ]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
+      
           animation: {
-            duration: 1500,
+            duration: 1400,
             easing: "easeOutQuart"
           },
+      
           plugins: {
             legend: {
               display: false
-            },
-            tooltip: {
-              backgroundColor: "#0f172a",
-              titleColor: "#ffffff",
-              bodyColor: "#e2e8f0",
-              borderColor: "#334155",
-              borderWidth: 1,
-              padding: 12
             }
           },
+      
           scales: {
             r: {
               min: 0,
               max: 100,
+      
+              // 🔥 THIS FIXES SHAPE DISTORTION
+              suggestedMin: 0,
+              suggestedMax: 100,
+      
               angleLines: {
-                color: "rgba(148,163,184,0.18)"
+                color: "rgba(148,163,184,0.15)"
               },
+      
               grid: {
-                color: "rgba(148,163,184,0.16)"
+                color: "rgba(148,163,184,0.12)"
               },
+      
               pointLabels: {
                 color: "#cbd5e1",
                 font: {
@@ -1573,23 +1585,23 @@ async function renderEmployeePerformance() {
                   weight: "600"
                 }
               },
+      
               ticks: {
-                color: "#94a3b8",
-                backdropColor: "transparent",
-                stepSize: 20
+                display: false, // remove clutter numbers
+                stepSize: 25
               }
             }
           }
         },
+      
         plugins: [
           {
-            id: "empRadarGlow",
+            id: "radarGlow",
             beforeDatasetsDraw(chart) {
               const { ctx } = chart;
               ctx.save();
-              ctx.shadowColor = "rgba(56,189,248,0.28)";
-              ctx.shadowBlur = 18;
-              ctx.shadowOffsetY = 4;
+              ctx.shadowColor = "rgba(56,189,248,0.35)";
+              ctx.shadowBlur = 16;
             },
             afterDatasetsDraw(chart) {
               chart.ctx.restore();
