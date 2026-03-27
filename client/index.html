@@ -13,10 +13,24 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body class="theme-dark">
+    <div class="auth-particles">
+      <span></span>
+      <span></span>
+      <span></span>
+      <span></span>
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+    <div class="auth-bg-orb auth-orb-1"></div>
+    <div class="auth-bg-orb auth-orb-2"></div>
+    <div class="auth-bg-orb auth-orb-3"></div>
+
     <div class="auth-shell">
-      <div class="auth-layout">
-        <!-- LEFT: Login/Register -->
-        <div class="auth-card">
+      <div class="auth-card auth-card-split" id="authCard">
+        <div class="auth-border-glow"></div>
+        <!-- LEFT: FORM -->
+        <div class="auth-left">
           <div class="auth-top">
             <div>
               <div class="brand">HREC</div>
@@ -88,40 +102,58 @@
             <button class="btn btn-primary" type="submit">Create account</button>
           </form>
 
-          <div class="foot muted">
-            Secure login for HR, Candidates, and Employees.
-          </div>
-        </div>
-
-        <!-- RIGHT: Welcome Panel -->
-        <div class="auth-hero">
-          <div class="hero-card">
-            <div class="hero-chip">Smart Hiring • Better Decisions</div>
-            <h1 class="hero-title">Welcome to HREC.</h1>
-            <p class="hero-subtitle">
-              Elevate hiring with an intelligent recruitment experience built for HR teams,
-              candidates, and employees.
+          
+        <!-- RIGHT: WELCOME PANEL -->
+        <div class="auth-right">
+          <div class="auth-quote-wrap">
+            <div class="auth-mini-badge">Smart Hiring • Better Decisions</div>
+            <h1 class="auth-quote-title">
+              <span id="authTypewriter"></span><span class="type-caret">|</span>
+            </h1>
+            <p class="auth-quote-text">
+              Elevate hiring with an intelligent recruitment experience designed for speed,
+              clarity, and confident decision-making. From AI-powered screening to interviews,
+              employee tasks, and performance insights — everything lives in one refined platform.
             </p>
 
-            <div class="hero-points">
-              <div class="hero-point">
-                <div class="hero-dot"></div>
-                <span>AI-powered resume analysis</span>
-              </div>
-              <div class="hero-point">
-                <div class="hero-dot"></div>
-                <span>Role-based dashboards</span>
-              </div>
-              <div class="hero-point">
-                <div class="hero-dot"></div>
-                <span>Interview scoring & insights</span>
-              </div>
+            <div class="auth-feature-list">
+              <div class="auth-feature-item">AI Resume Analysis</div>
+              <div class="auth-feature-item">Interview Assistance</div>
+              <div class="auth-feature-item">Task & Performance Tracking</div>
+              <div class="auth-feature-item">Role-based Smart Dashboard</div>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <script src="script.js?v=loginlayoutfix1"></script>
+    <script src="script.js"></script>
+    <script>
+      function runTypewriter() {
+        const el = document.getElementById("authTypewriter");
+        if (!el) return;
+    
+        const text = "Welcome to HREC.";
+        let i = 0;
+        el.textContent = "";
+    
+        const tick = () => {
+          if (i < text.length) {
+            el.textContent += text.charAt(i);
+            i += 1;
+            setTimeout(tick, 85);
+          }
+        };
+    
+        tick();
+      }
+    
+      window.addEventListener("load", () => {
+        setTimeout(() => {
+          document.getElementById("authCard")?.classList.add("auth-card-show");
+          setTimeout(runTypewriter, 420);
+        }, 120);
+      });
+    </script>
   </body>
 </html>
