@@ -1650,6 +1650,82 @@ async function renderEmployeePerformance() {
   }
 }
 
+async function renderEmployeeTasks() {
+  const wrap = qs("#empTasksTable");
+  if (!wrap) return;
+
+  const status = qs("#empTaskFilter")?.value || "";
+  const params = new URLSearchParams();
+  if (status) params.set("status", status);
+
+  try {
+    const data = await api(`/api/tasks${params.toString() ? `?${params.toString()}` : ""}`);
+    const tasks = data.tasks || [];
+
+    wrap.innerHTML = tasks.length
+      ? `
+      <table>
+        <thead>
+          <tr>
+            <th>Task ID</th>
+            <th>Title</th>
+            <th>Status</th>
+            <th>Feedback</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${tasks.map((t) => `
+            <tr>
+              <td class="muted">${escapeHtml(t.id || "—")}</td>
+              <td>${escapeHtml(t.title || "—")}</td>
+              <td>${recommendationBadge(t.status || "Pending")}</td>
+              <td>${escapeHtml(t.hr_feedback || "—")}</td>
+              <td>
+                <div class="row wrap">
+                  <button class="btn btn-ghost" data-task-status="${t.id}" data-status-to="Pending" type="button">Pending</button>
+                  <button class="btn btn-ghost" data-task-status="${t.id}" data-status-to="Completed" type="button">Completed</button>
+                </div>
+              </td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+      `
+      : `<div class="muted">No employee tasks found.</div>`;
+
+    wrap.querySelectorAll("[data-task-status]").forEach((btn) => {
+      if (btn.dataset.bound === "1") return;
+      btn.dataset.bound = "1";
+      btn.addEventListener("click", async () => {
+        try {
+          await api(`/api/tasks/${btn.dataset.taskStatus}`, {
+            method: "PATCH",
+            body: { status: btn.dataset.statusTo },
+          });
+          setAlert(`Task marked ${btn.dataset.statusTo}`, "ok");
+          await renderEmployeeTasks();
+        } catch (err) {
+          setAlert(err.message || "Failed to update task");
+        }
+      });
+    });
+  } catch (err) {
+    wrap.innerHTML = `<div class="muted">${escapeHtml(err.message || "Failed to load employee tasks")}</div>`;
+  }
+
+  const refreshBtn = qs("#empRefreshTasks");
+  if (refreshBtn && refreshBtn.dataset.bound !== "1") {
+    refreshBtn.dataset.bound = "1";
+    refreshBtn.addEventListener("click", renderEmployeeTasks);
+  }
+
+  const filter = qs("#empTaskFilter");
+  if (filter && filter.dataset.bound !== "1") {
+    filter.dataset.bound = "1";
+    filter.addEventListener("change", renderEmployeeTasks);
+  }
+}
 /* ================= DASHBOARD INIT ================= */
 
 async function initDashboard() {
@@ -1742,21 +1818,14 @@ async function initDashboard() {
   function doLogout() {
     localStorage.removeItem("hrec_token");
     localStorage.removeItem("hrec_user");
-  
-    // force redirect (prevents weird cache issues)
-    window.location.href = "index.html";
+    window.location.replace("index.html");
   }
   
-  // bind directly (no dataset logic)
   const logoutBtn = qs("#logoutBtn");
-  if (logoutBtn) {
-    logoutBtn.onclick = doLogout;
-  }
+  if (logoutBtn) logoutBtn.onclick = doLogout;
   
   const profileLogoutBtn = qs("#profileLogoutBtn");
-  if (profileLogoutBtn) {
-    profileLogoutBtn.onclick = doLogout;
-  }
+  if (profileLogoutBtn) profileLogoutBtn.onclick = doLogout;
 
   const profileMini = qs("#profileMini");
   const profileDropdown = qs("#profileDropdown");
