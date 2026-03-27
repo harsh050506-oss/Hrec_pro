@@ -26,53 +26,93 @@ def tfidf_match_score(resume_text: str, job_text: str) -> int:
 
 def extract_basic_entities(text: str) -> dict:
     """
-    Lightweight heuristic extraction for demo/learning:
-    - skills: looks for common skill tokens (can be expanded)
-    - education/experience: simple keyword-based snippets
+    Lightweight heuristic extraction:
+    - detects skills from a broader skill bank
+    - supports common aliases and marketing/domain skills
     """
     text = text or ""
-    low = text.lower()
+    low = normalize_text(text)
 
-    skill_bank = [
-        "python",
-        "flask",
-        "django",
-        "javascript",
-        "typescript",
-        "react",
-        "node",
-        "mongodb",
-        "sql",
-        "docker",
-        "kubernetes",
-        "aws",
-        "azure",
-        "gcp",
-        "ml",
-        "nlp",
-        "tensorflow",
-        "pytorch",
-        "pandas",
-        "numpy",
-        "excel",
-        "hr",
-        "recruitment",
-        "communication",
-    ]
+    # canonical skill : aliases/patterns
+    skill_aliases = {
+        # tech
+        "python": ["python"],
+        "flask": ["flask"],
+        "django": ["django"],
+        "javascript": ["javascript", "js"],
+        "typescript": ["typescript", "ts"],
+        "react": ["react", "reactjs", "react.js"],
+        "node": ["node", "nodejs", "node.js"],
+        "mongodb": ["mongodb", "mongo db", "mongo"],
+        "sql": ["sql", "mysql", "postgresql", "postgres"],
+        "docker": ["docker"],
+        "kubernetes": ["kubernetes", "k8s"],
+        "aws": ["aws", "amazon web services"],
+        "azure": ["azure"],
+        "gcp": ["gcp", "google cloud"],
+        "ml": ["ml", "machine learning"],
+        "nlp": ["nlp", "natural language processing"],
+        "tensorflow": ["tensorflow"],
+        "pytorch": ["pytorch"],
+        "pandas": ["pandas"],
+        "numpy": ["numpy"],
+        "excel": ["excel", "microsoft excel"],
+        "power bi": ["power bi", "powerbi"],
+        "tableau": ["tableau"],
+        "java": ["java"],
+        "html": ["html"],
+        "css": ["css"],
+        "api": ["api", "rest api", "restful api"],
 
-    skills = sorted({s for s in skill_bank if re.search(rf"\b{re.escape(s)}\b", low)})
+        # HR / management
+        "hr": ["hr", "human resources"],
+        "recruitment": ["recruitment", "talent acquisition", "hiring"],
+        "communication": ["communication"],
+
+        # marketing
+        "seo": ["seo", "search engine optimization"],
+        "sem": ["sem", "search engine marketing"],
+        "social media": ["social media", "social media marketing"],
+        "google ads": ["google ads", "google adwords", "adwords"],
+        "content creation": ["content creation", "content writing", "content marketing"],
+        "digital marketing": ["digital marketing"],
+        "branding": ["branding", "brand management"],
+        "campaign management": ["campaign management", "campaigns"],
+        "email marketing": ["email marketing"],
+        "market research": ["market research"],
+        "analytics": ["analytics", "marketing analytics", "web analytics"],
+    }
+
+    skills = []
+    for canonical, aliases in skill_aliases.items():
+        for alias in aliases:
+            if re.search(rf"\b{re.escape(alias)}\b", low):
+                skills.append(canonical)
+                break
+
+    skills = sorted(set(skills))
 
     edu_snips = []
-    for kw in ["bachelor", "master", "phd", "degree", "university", "college"]:
-        if kw in low:
+    for kw in [
+        "bachelor", "master", "phd", "degree", "university", "college",
+        "bba", "bsc", "msc", "mba", "be", "btech", "mtech"
+    ]:
+        if re.search(rf"\b{re.escape(kw)}\b", low):
             edu_snips.append(kw)
 
     exp_snips = []
-    for kw in ["experience", "years", "worked", "project", "intern", "employment"]:
-        if kw in low:
+    for kw in [
+        "experience", "years", "worked", "project", "intern", "employment",
+        "specialist", "manager", "lead", "executive", "developer", "analyst"
+    ]:
+        if re.search(rf"\b{re.escape(kw)}\b", low):
             exp_snips.append(kw)
 
-    return {"skills": skills, "education": sorted(set(edu_snips)), "experience": sorted(set(exp_snips))}
+    return {
+        "skills": skills,
+        "education": sorted(set(edu_snips)),
+        "experience": sorted(set(exp_snips))
+    }
 
 
 def _recommendation_from_score(score: int) -> str:
@@ -84,12 +124,14 @@ def _recommendation_from_score(score: int) -> str:
 
 
 def _infer_experience_level(entities: dict) -> str:
-    low = " ".join([str(entities.get("experience") or []), str(entities.get("education") or [])]).lower()
-    # Very lightweight inference (demo/learning); OpenAI can replace this when available.
+    low = " ".join([
+        str(entities.get("experience") or []),
+        str(entities.get("education") or [])
+    ]).lower()
+
     if any(k in low for k in ["intern"]):
         return "Entry-level (intern/early experience)"
-    if any(k in low for k in ["experience", "worked", "employment", "years"]):
-        # Split mid vs senior heuristics with keyword presence.
+    if any(k in low for k in ["experience", "worked", "employment", "years", "specialist", "analyst", "developer"]):
         if any(k in low for k in ["senior", "lead", "manager"]):
             return "Senior (substantial hands-on experience)"
         return "Mid-level (measurable experience)"
@@ -99,27 +141,29 @@ def _infer_experience_level(entities: dict) -> str:
 
 
 def _local_resume_analysis(
-    *, resume_text: str, job_title: str, job_description: str, job_skills: list[str], tfidf_score: int, extracted: dict
+    *,
+    resume_text: str,
+    job_title: str,
+    job_description: str,
+    job_skills: list[str],
+    tfidf_score: int,
+    extracted: dict
 ) -> dict:
-    resume_skills = set(extracted.get("skills") or [])
-    job_skills_lower = [s.lower() for s in (job_skills or [])]
+    resume_skills = set((extracted.get("skills") or []))
+    job_skills_lower = [str(s).lower().strip() for s in (job_skills or []) if str(s).strip()]
 
-    # Strengths: skill overlap.
     overlap = []
     for s in job_skills_lower:
-        if any(rs == s for rs in [x.lower() for x in resume_skills]):
+        if s in [x.lower() for x in resume_skills]:
             overlap.append(s)
-    strengths = [s for s in overlap[:5]]
 
-    # Weaknesses/missing requirements: required skills not evidenced in extracted skills.
+    strengths = overlap[:5]
     missing = [s for s in job_skills_lower if s not in strengths]
-    # Keep the list short and readable.
     weaknesses = missing[:6]
-    missing_requirements = weaknesses[:6]
+    missing_requirements = missing[:6]
 
     experience_level = _infer_experience_level(extracted)
 
-    # Compose HR-friendly paragraph.
     strengths_line = ", ".join([str(x) for x in strengths]) if strengths else "relevant skills where applicable"
     weaknesses_line = ", ".join([str(x) for x in weaknesses]) if weaknesses else "no major gaps detected from the required skills list"
 
@@ -128,12 +172,12 @@ def _local_resume_analysis(
         f"The candidate appears {experience_level.lower()} for the role of {job_title}. "
         f"Key strengths include: {strengths_line}. "
         f"Potential gaps/missing requirements: {weaknesses_line}. "
-        f"Based on this, the recommendation is { _recommendation_from_score(tfidf_score) }."
+        f"Based on this, the recommendation is {_recommendation_from_score(tfidf_score)}."
     )
 
     return {
         "score": int(tfidf_score),
-        "extracted_skills": sorted(list(resume_skills))[:10],
+        "extracted_skills": sorted(list(resume_skills))[:12],
         "experience_level": experience_level,
         "strengths": strengths,
         "weaknesses": weaknesses,
@@ -154,9 +198,10 @@ def analyze_resume_hybrid(
 ) -> dict:
     """
     Hybrid resume analysis:
-    - Always computes/uses the existing TF-IDF cosine similarity score.
-    - Optionally calls OpenAI to produce richer HR outputs.
-    - Never raises: falls back to local analysis on any OpenAI failure.
+    - Uses TF-IDF score
+    - Uses improved local extraction
+    - Optionally enriches with OpenAI
+    - Always falls back safely
     """
     extracted = extracted or extract_basic_entities(resume_text)
 
@@ -176,7 +221,6 @@ def analyze_resume_hybrid(
     try:
         from .ai_openai import analyze_resume_with_openai
 
-        # OpenAI enrichment is optional.
         openai_data = analyze_resume_with_openai(
             resume_text=resume_text,
             job_title=job_title,
@@ -184,10 +228,10 @@ def analyze_resume_hybrid(
             job_skills=job_skills,
             tfidf_score=int(tfidf_score),
         )
+
         if not openai_data:
             return {**local, "extracted": extracted}
 
-        # Combine: keep the original TF-IDF numeric score, replace AI fields.
         return {
             "score": int(tfidf_score),
             "extracted": extracted,
@@ -200,6 +244,4 @@ def analyze_resume_hybrid(
             "recommendation": openai_data.get("recommendation") or local["recommendation"],
         }
     except Exception:
-        # Any unexpected errors must fall back to local logic.
         return {**local, "extracted": extracted}
-
