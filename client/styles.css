@@ -2228,5 +2228,59 @@ body.theme-light .auth-feature-item:hover {
 }
 #empPerfChart {
   width: 100% !important;
-  height: 320px !important;
+  height: 380px !important;
+}
+/* ===== Force auth page into 2-column layout ===== */
+.auth-shell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 32px;
+}
+
+.auth-card {
+  width: min(1200px, 96vw);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+  align-items: stretch;
+}
+
+/* keep both sides full width inside their grid cells */
+.auth-card > * {
+  min-width: 0;
+  width: 100%;
+}
+
+@media (max-width: 900px) {
+  .auth-card {
+    grid-template-columns: 1fr;
+  }
+}
+body:has(.brand) .auth-shell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 32px;
+}
+
+body:has(.brand) .auth-card {
+  width: min(1200px, 96vw);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+  align-items: stretch;
+}
+
+body:has(.brand) .auth-card > * {
+  min-width: 0;
+  width: 100%;
+}
+
+@media (max-width: 900px) {
+  body:has(.brand) .auth-card {
+    grid-template-columns: 1fr;
+  }
 }
