@@ -14,6 +14,15 @@ from utils.validation import require_fields, now_utc
 resumes_bp = Blueprint("resumes", __name__)
 
 
+def normalize_skill_list(items):
+    cleaned = []
+    for item in items or []:
+        val = str(item or "").strip().lower()
+        if val:
+            cleaned.append(val)
+    return cleaned
+
+
 @resumes_bp.post("/upload")
 @require_auth(roles=["Candidate"])
 def upload_resume():
@@ -57,6 +66,57 @@ def upload_resume():
         extracted=entities,
     )
 
+    # =========================
+    # NEW: SKILL-BASED OVERRIDE LOGIC
+    # =========================
+    required_skills = normalize_skill_list(job.get("skills", []))
+    extracted_skills = normalize_skill_list(analysis.get("extracted_skills", []))
+
+    required_set = set(required_skills)
+    extracted_set = set(extracted_skills)
+
+    matched_required = required_set.intersection(extracted_set)
+    match_percent = round((len(matched_required) / len(required_set)) * 100) if required_set else 0
+
+    # keep missing requirements consistent with actual match result
+    missing_requirements = sorted(list(required_set - extracted_set))
+
+    # Rule:
+    # - all required skills present -> accept
+    # - 60%+ matched -> review
+    # - below 60% -> reject
+    if required_set and required_set.issubset(extracted_set):
+        score = max(score, 75)
+        recommendation = "accept"
+    elif match_percent >= 60:
+        score = max(score, 45)
+        recommendation = "review"
+    else:
+        recommendation = "reject"
+
+    # update summary to match final rule more clearly
+    ai_summary = analysis.get("ai_summary", "")
+    if recommendation == "accept":
+        ai_summary = (
+            f"The resume covers all required skills for this job. "
+            f"Matched required skills: {', '.join(sorted(matched_required)) or 'none'}. "
+            f"Overall fit is acceptable."
+        )
+    elif recommendation == "review":
+        ai_summary = (
+            f"The resume matches {match_percent}% of the required skills. "
+            f"Matched skills: {', '.join(sorted(matched_required)) or 'none'}. "
+            f"Missing requirements: {', '.join(missing_requirements) or 'none'}. "
+            f"This profile should be reviewed further."
+        )
+    else:
+        ai_summary = (
+            f"The resume matches only {match_percent}% of the required skills. "
+            f"Matched skills: {', '.join(sorted(matched_required)) or 'none'}. "
+            f"Missing requirements: {', '.join(missing_requirements) or 'none'}. "
+            f"Current fit is below the required threshold."
+        )
+
     resume_doc = {
         "candidate_id": ObjectId(g.user["_id"]),
         "job_id": job["_id"],
@@ -66,13 +126,13 @@ def upload_resume():
         "text": text,
         "extracted": entities,
         "score": score,
-        "ai_extracted_skills": analysis.get("extracted_skills", []),
+        "ai_extracted_skills": sorted(list(extracted_set)),
         "ai_experience_level": analysis.get("experience_level", ""),
         "ai_strengths": analysis.get("strengths", []),
         "ai_weaknesses": analysis.get("weaknesses", []),
-        "ai_missing_requirements": analysis.get("missing_requirements", []),
-        "ai_summary": analysis.get("ai_summary", ""),
-        "recommendation": analysis.get("recommendation", "review"),
+        "ai_missing_requirements": missing_requirements,
+        "ai_summary": ai_summary,
+        "recommendation": recommendation,
         "created_at": now_utc(),
     }
 
@@ -92,19 +152,19 @@ def upload_resume():
                 "$set": {
                     "resume_id": resume_doc["_id"],
                     "resume_score": score,
-                    "resume_ai_extracted_skills": analysis.get("extracted_skills", []),
+                    "resume_ai_extracted_skills": sorted(list(extracted_set)),
                     "resume_ai_experience_level": analysis.get("experience_level", ""),
                     "resume_ai_strengths": analysis.get("strengths", []),
                     "resume_ai_weaknesses": analysis.get("weaknesses", []),
-                    "resume_ai_summary": analysis.get("ai_summary", ""),
-                    "resume_recommendation": analysis.get("recommendation", "review"),
+                    "resume_ai_summary": ai_summary,
+                    "resume_recommendation": recommendation,
                     "updated_at": now_utc(),
                 }
             },
         )
 
     # =========================
-    # 🔥 EMAIL NOTIFICATION (NEW)
+    # EMAIL NOTIFICATION
     # =========================
     user = db.users.find_one({"_id": ObjectId(g.user["_id"])})
 
@@ -119,7 +179,7 @@ Hi {user.get('name','User')},
 Your resume has been successfully uploaded and analyzed.
 
 📊 Score: {score}%
-🧠 AI Recommendation: {analysis.get("recommendation","review")}
+🧠 AI Recommendation: {recommendation}
 
 Keep improving and best of luck!
 
@@ -132,9 +192,9 @@ Keep improving and best of luck!
             {
                 "resume": doc_to_json(resume_doc),
                 "score": score,
-                "extracted_skills": analysis.get("extracted_skills", []),
-                "ai_summary": analysis.get("ai_summary", ""),
-                "recommendation": analysis.get("recommendation", "review"),
+                "extracted_skills": sorted(list(extracted_set)),
+                "ai_summary": ai_summary,
+                "recommendation": recommendation,
             }
         ),
         201,
