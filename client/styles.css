@@ -2219,3 +2219,10 @@ body.theme-light .auth-feature-item:hover {
   width: 100% !important;
   height: 340px !important;
 }
+
+#funnelChart,
+#perfSeriesChart,
+#perfChart {
+  width: 100% !important;
+  height: 340px !important;
+}

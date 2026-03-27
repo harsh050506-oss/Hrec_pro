@@ -1236,35 +1236,134 @@ async function renderHrAnalytics() {
     const funnelData = funnel.funnel || {};
     const perfRows = perf.performance || [];
 
+    /* ================= FUNNEL 3D DOUGHNUT ================= */
+    const funnelCtx = funnelCanvas.getContext("2d");
+
+    const funnelGradients = [
+      funnelCtx.createLinearGradient(0, 0, 0, 300),
+      funnelCtx.createLinearGradient(0, 0, 0, 300),
+      funnelCtx.createLinearGradient(0, 0, 0, 300)
+    ];
+
+    funnelGradients[0].addColorStop(0, "#8b5cf6");
+    funnelGradients[0].addColorStop(1, "#6366f1");
+
+    funnelGradients[1].addColorStop(0, "#22c55e");
+    funnelGradients[1].addColorStop(1, "#16a34a");
+
+    funnelGradients[2].addColorStop(0, "#f59e0b");
+    funnelGradients[2].addColorStop(1, "#ef4444");
+
+    const funnelDepthColors = [
+      "rgba(76,29,149,0.60)",
+      "rgba(21,128,61,0.60)",
+      "rgba(180,83,9,0.60)"
+    ];
+
+    const funnelLabels = Object.keys(funnelData);
+    const funnelValues = Object.values(funnelData).map((v) => Number(v || 0));
+
     hrecFunnelChartInstance = new Chart(funnelCanvas, {
-      type: "line",
+      type: "doughnut",
       data: {
-        labels: Object.keys(funnelData),
+        labels: funnelLabels,
         datasets: [
           {
             label: "Applications",
-            data: Object.values(funnelData),
-            tension: 0.35,
-            fill: false
+            data: funnelValues,
+            backgroundColor: funnelGradients,
+            borderColor: "rgba(255,255,255,0.18)",
+            borderWidth: 2,
+            hoverOffset: 16,
+            spacing: 4
+          },
+          {
+            label: "Depth",
+            data: funnelValues,
+            backgroundColor: funnelDepthColors,
+            borderWidth: 0,
+            hoverOffset: 0,
+            spacing: 4,
+            weight: 0.35
           }
         ]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        animation: false,
+        cutout: "54%",
+        rotation: -90,
+        animation: {
+          animateRotate: true,
+          animateScale: true,
+          duration: 1600,
+          easing: "easeOutQuart"
+        },
         plugins: {
           legend: {
-            display: true
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: true
+            display: true,
+            position: "bottom",
+            labels: {
+              color: "#cbd5e1",
+              padding: 18,
+              usePointStyle: true,
+              pointStyle: "circle",
+              font: {
+                size: 12,
+                weight: "600"
+              }
+            }
+          },
+          tooltip: {
+            backgroundColor: "#0f172a",
+            titleColor: "#ffffff",
+            bodyColor: "#e2e8f0",
+            borderColor: "#334155",
+            borderWidth: 1,
+            padding: 12
           }
         }
-      }
+      },
+      plugins: [
+        {
+          id: "funnelCenterText",
+          afterDraw(chart) {
+            const meta = chart.getDatasetMeta(0);
+            if (!meta?.data?.length) return;
+
+            const total = funnelValues.reduce((a, b) => a + b, 0);
+            const x = meta.data[0].x;
+            const y = meta.data[0].y;
+            const c = chart.ctx;
+
+            c.save();
+            c.textAlign = "center";
+            c.textBaseline = "middle";
+
+            c.font = "700 26px Inter, sans-serif";
+            c.fillStyle = "#ffffff";
+            c.fillText(`${total}`, x, y - 8);
+
+            c.font = "500 13px Inter, sans-serif";
+            c.fillStyle = "#94a3b8";
+            c.fillText("Total Applications", x, y + 18);
+
+            c.restore();
+          }
+        }
+      ]
     });
+
+    /* ================= PREMIUM BAR CHART ================= */
+    const perfCtx = perfCanvas.getContext("2d");
+
+    const perfGradient = perfCtx.createLinearGradient(0, 0, 0, 320);
+    perfGradient.addColorStop(0, "rgba(139,92,246,0.95)");
+    perfGradient.addColorStop(1, "rgba(59,130,246,0.75)");
+
+    const perfBorderGradient = perfCtx.createLinearGradient(0, 0, 0, 320);
+    perfBorderGradient.addColorStop(0, "#c4b5fd");
+    perfBorderGradient.addColorStop(1, "#60a5fa");
 
     hrecPerfSeriesChartInstance = new Chart(perfCanvas, {
       type: "bar",
@@ -1276,26 +1375,90 @@ async function renderHrAnalytics() {
         datasets: [
           {
             label: "Performance Score",
-            data: perfRows.map((r) => Number(r.score || 0))
+            data: perfRows.map((r) => Number(r.score || 0)),
+            backgroundColor: perfGradient,
+            borderColor: perfBorderGradient,
+            borderWidth: 2,
+            borderRadius: 14,
+            borderSkipped: false,
+            hoverBackgroundColor: "rgba(99,102,241,0.95)",
+            maxBarThickness: 48
           }
         ]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        animation: false,
+        animation: {
+          duration: 1500,
+          easing: "easeOutQuart"
+        },
         plugins: {
           legend: {
-            display: true
+            display: true,
+            labels: {
+              color: "#cbd5e1",
+              font: {
+                size: 12,
+                weight: "600"
+              }
+            }
+          },
+          tooltip: {
+            backgroundColor: "#0f172a",
+            titleColor: "#ffffff",
+            bodyColor: "#e2e8f0",
+            borderColor: "#334155",
+            borderWidth: 1,
+            padding: 12,
+            callbacks: {
+              label: function(context) {
+                return `${context.raw}%`;
+              }
+            }
           }
         },
         scales: {
+          x: {
+            ticks: {
+              color: "#cbd5e1",
+              font: {
+                size: 11,
+                weight: "600"
+              }
+            },
+            grid: {
+              display: false
+            }
+          },
           y: {
             beginAtZero: true,
-            max: 100
+            max: 100,
+            ticks: {
+              color: "#94a3b8",
+              callback: (value) => `${value}%`
+            },
+            grid: {
+              color: "rgba(148,163,184,0.12)"
+            }
           }
         }
-      }
+      },
+      plugins: [
+        {
+          id: "barShadow",
+          beforeDatasetsDraw(chart) {
+            const { ctx } = chart;
+            ctx.save();
+            ctx.shadowColor = "rgba(99,102,241,0.35)";
+            ctx.shadowBlur = 18;
+            ctx.shadowOffsetY = 10;
+          },
+          afterDatasetsDraw(chart) {
+            chart.ctx.restore();
+          }
+        }
+      ]
     });
   } catch (err) {
     console.error("Analytics load failed:", err);
