@@ -16,10 +16,12 @@ resumes_bp = Blueprint("resumes", __name__)
 
 def normalize_skill_list(items):
     cleaned = []
+    seen = set()
     for item in items or []:
         val = str(item or "").strip().lower()
-        if val:
+        if val and val not in seen:
             cleaned.append(val)
+            seen.add(val)
     return cleaned
 
 
@@ -54,7 +56,7 @@ def upload_resume():
     if not job:
         return jsonify({"error": "Job not found"}), 404
 
-    job_text = f"{job.get('title','')}\n{job.get('description','')}\n{' '.join(job.get('skills',[]))}"
+    job_text = f"{job.get('title','')}\n{job.get('description','')}\n{' '.join(job.get('skills', []))}"
     score = tfidf_match_score(text, job_text)
 
     analysis = analyze_resume_hybrid(
@@ -67,7 +69,7 @@ def upload_resume():
     )
 
     # =========================
-    # NEW: SKILL-BASED OVERRIDE LOGIC
+    # ROBUST SKILL HANDLING
     # =========================
     required_skills = normalize_skill_list(job.get("skills", []))
     extracted_skills = normalize_skill_list(analysis.get("extracted_skills", []))
@@ -75,17 +77,21 @@ def upload_resume():
     required_set = set(required_skills)
     extracted_set = set(extracted_skills)
 
-    matched_required = required_set.intersection(extracted_set)
+    # ALSO match directly from resume text so new skills still work
+    resume_text_l = (text or "").lower()
+
+    matched_required = set()
+    for skill in required_set:
+        if skill in extracted_set or skill in resume_text_l:
+            matched_required.add(skill)
+
     match_percent = round((len(matched_required) / len(required_set)) * 100) if required_set else 0
+    missing_requirements = sorted(list(required_set - matched_required))
 
-    # keep missing requirements consistent with actual match result
-    missing_requirements = sorted(list(required_set - extracted_set))
-
-    # Rule:
-    # - all required skills present -> accept
-    # - 60%+ matched -> review
-    # - below 60% -> reject
-    if required_set and required_set.issubset(extracted_set):
+    # =========================
+    # RECOMMENDATION LOGIC
+    # =========================
+    if required_set and required_set.issubset(matched_required):
         score = max(score, 75)
         recommendation = "accept"
     elif match_percent >= 60:
@@ -94,7 +100,10 @@ def upload_resume():
     else:
         recommendation = "reject"
 
-    # update summary to match final rule more clearly
+    # Prefer strengths from actual matched skills
+    strengths = sorted(list(matched_required))[:6]
+    weaknesses = missing_requirements[:6]
+
     ai_summary = analysis.get("ai_summary", "")
     if recommendation == "accept":
         ai_summary = (
@@ -128,8 +137,8 @@ def upload_resume():
         "score": score,
         "ai_extracted_skills": sorted(list(extracted_set)),
         "ai_experience_level": analysis.get("experience_level", ""),
-        "ai_strengths": analysis.get("strengths", []),
-        "ai_weaknesses": analysis.get("weaknesses", []),
+        "ai_strengths": strengths,
+        "ai_weaknesses": weaknesses,
         "ai_missing_requirements": missing_requirements,
         "ai_summary": ai_summary,
         "recommendation": recommendation,
@@ -154,8 +163,8 @@ def upload_resume():
                     "resume_score": score,
                     "resume_ai_extracted_skills": sorted(list(extracted_set)),
                     "resume_ai_experience_level": analysis.get("experience_level", ""),
-                    "resume_ai_strengths": analysis.get("strengths", []),
-                    "resume_ai_weaknesses": analysis.get("weaknesses", []),
+                    "resume_ai_strengths": strengths,
+                    "resume_ai_weaknesses": weaknesses,
                     "resume_ai_summary": ai_summary,
                     "resume_recommendation": recommendation,
                     "updated_at": now_utc(),
