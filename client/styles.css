@@ -2214,3 +2214,8 @@ body.theme-light .auth-feature-item:hover {
   min-height: 360px;
   overflow: hidden;
 }
+
+#perfChart {
+  width: 100% !important;
+  height: 340px !important;
+}

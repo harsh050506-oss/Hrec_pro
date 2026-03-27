@@ -1069,27 +1069,140 @@ async function renderHrPerformance() {
 
     const scores = rows.map((r) => Number(r.score || 0));
 
+    const ctx = canvas.getContext("2d");
+
+    const gradients = scores.map((_, i) => {
+      const g = ctx.createLinearGradient(0, 0, 0, 320);
+
+      const palette = [
+        ["#8b5cf6", "#6366f1"],
+        ["#22c55e", "#16a34a"],
+        ["#f59e0b", "#ef4444"],
+        ["#38bdf8", "#2563eb"],
+        ["#ec4899", "#db2777"],
+        ["#14b8a6", "#0f766e"],
+        ["#f97316", "#ea580c"],
+        ["#a855f7", "#7e22ce"]
+      ];
+
+      const pair = palette[i % palette.length];
+      g.addColorStop(0, pair[0]);
+      g.addColorStop(1, pair[1]);
+      return g;
+    });
+
+    const depthColors = scores.map((_, i) => {
+      const palette = [
+        "rgba(76, 29, 149, 0.65)",
+        "rgba(21, 128, 61, 0.65)",
+        "rgba(180, 83, 9, 0.65)",
+        "rgba(30, 64, 175, 0.65)",
+        "rgba(157, 23, 77, 0.65)",
+        "rgba(15, 118, 110, 0.65)",
+        "rgba(154, 52, 18, 0.65)",
+        "rgba(107, 33, 168, 0.65)"
+      ];
+      return palette[i % palette.length];
+    });
+
     hrecPerfChartInstance = new Chart(canvas, {
-      type: "pie",
+      type: "doughnut",
       data: {
-        labels: labels,
+        labels,
         datasets: [
           {
-            data: scores
+            label: "Performance Score",
+            data: scores,
+            backgroundColor: gradients,
+            borderColor: "rgba(255,255,255,0.18)",
+            borderWidth: 2,
+            hoverOffset: 18,
+            spacing: 4
+          },
+          {
+            // fake depth / 3D shadow ring
+            label: "Depth",
+            data: scores,
+            backgroundColor: depthColors,
+            borderWidth: 0,
+            hoverOffset: 0,
+            spacing: 4,
+            weight: 0.35
           }
         ]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        animation: false,
+        cutout: "50%",
+        rotation: -90,
+        animation: {
+          animateRotate: true,
+          animateScale: true,
+          duration: 1600,
+          easing: "easeOutQuart"
+        },
         plugins: {
           legend: {
             display: true,
-            position: "right"
+            position: "right",
+            labels: {
+              color: "#cbd5e1",
+              padding: 18,
+              usePointStyle: true,
+              pointStyle: "circle",
+              font: {
+                size: 12,
+                weight: "600"
+              }
+            }
+          },
+          tooltip: {
+            backgroundColor: "#0f172a",
+            titleColor: "#ffffff",
+            bodyColor: "#e2e8f0",
+            borderColor: "#334155",
+            borderWidth: 1,
+            padding: 12,
+            callbacks: {
+              label: function(context) {
+                return `${context.label}: ${context.raw}%`;
+              }
+            }
           }
         }
-      }
+      },
+      plugins: [
+        {
+          id: "hrecCenterText",
+          afterDraw(chart) {
+            const meta = chart.getDatasetMeta(0);
+            if (!meta?.data?.length) return;
+
+            const total = scores.length
+              ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
+              : 0;
+
+            const x = meta.data[0].x;
+            const y = meta.data[0].y;
+            const c = chart.ctx;
+
+            c.save();
+            c.textAlign = "center";
+            c.textBaseline = "middle";
+
+            c.font = "700 28px Inter, sans-serif";
+            c.fillStyle = "#ffffff";
+            c.fillText(`${total}%`, x, y - 8);
+
+            c.font = "500 13px Inter, sans-serif";
+            c.fillStyle = "#94a3b8";
+            c.fillText("Avg Performance", x, y + 18);
+
+            c.restore();
+          }
+        }
+      ]
     });
   } catch (err) {
     console.error("Failed to load HR performance:", err);
