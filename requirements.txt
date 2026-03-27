@@ -1,10 +1,16 @@
 Flask==3.0.3
 flask-cors==4.0.1
+flask-dance==7.0.0
 pymongo==4.7.3
+dnspython==2.6.1
 PyJWT==2.9.0
 Werkzeug==3.0.3
 scikit-learn==1.5.1
 pdfminer.six==20240706
 python-docx==1.1.2
-openai
+python-dotenv==1.0.1
+requests==2.32.3
+requests-oauthlib==2.0.0
+oauthlib==3.2.2
 gunicorn==22.0.0
+openai
