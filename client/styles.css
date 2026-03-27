@@ -2284,3 +2284,84 @@ body:has(.brand) .auth-card > * {
     grid-template-columns: 1fr;
   }
 }
+/* ===== FINAL FORCE FIX FOR LOGIN 2-COLUMN LAYOUT ===== */
+.auth-shell {
+  min-height: 100vh !important;
+  width: 100% !important;
+  padding: 24px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+}
+
+.auth-layout {
+  width: min(1280px, 96vw) !important;
+  display: grid !important;
+  grid-template-columns: minmax(540px, 620px) minmax(420px, 1fr) !important;
+  gap: 28px !important;
+  align-items: stretch !important;
+}
+
+.auth-card {
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+}
+
+.auth-hero {
+  width: 100% !important;
+  min-width: 0 !important;
+  display: flex !important;
+  align-items: stretch !important;
+}
+
+.hero-card {
+  width: 100% !important;
+  min-height: 100% !important;
+}
+
+.auth-layout > * {
+  min-width: 0 !important;
+}
+
+@media (max-width: 980px) {
+  .auth-layout {
+    grid-template-columns: 1fr !important;
+  }
+}
+.auth-shell {
+  min-height: 100vh;
+  padding: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-layout {
+  width: min(1240px, 96vw);
+  display: grid;
+  grid-template-columns: minmax(420px, 560px) minmax(320px, 1fr);
+  gap: 28px;
+  align-items: stretch;
+}
+
+.auth-card,
+.auth-hero {
+  min-width: 0;
+}
+
+.auth-hero {
+  display: flex;
+  align-items: stretch;
+}
+
+.hero-card {
+  width: 100%;
+}
+
+@media (max-width: 980px) {
+  .auth-layout {
+    grid-template-columns: 1fr;
+  }
+}

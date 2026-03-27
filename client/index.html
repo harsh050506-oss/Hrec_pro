@@ -13,24 +13,10 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body class="theme-dark">
-    <div class="auth-particles">
-      <span></span>
-      <span></span>
-      <span></span>
-      <span></span>
-      <span></span>
-      <span></span>
-      <span></span>
-    </div>
-    <div class="auth-bg-orb auth-orb-1"></div>
-    <div class="auth-bg-orb auth-orb-2"></div>
-    <div class="auth-bg-orb auth-orb-3"></div>
-
     <div class="auth-shell">
-      <div class="auth-card auth-card-split" id="authCard">
-        <div class="auth-border-glow"></div>
-        <!-- LEFT: FORM -->
-        <div class="auth-left">
+      <div class="auth-layout">
+        <!-- LEFT SIDE -->
+        <div class="auth-card">
           <div class="auth-top">
             <div>
               <div class="brand">HREC</div>
@@ -38,27 +24,27 @@
             </div>
             <button class="btn btn-ghost" id="themeToggle" title="Toggle theme" type="button">☾</button>
           </div>
-
+  
           <div class="tabs">
             <button class="tab active" data-tab="login" type="button">Login</button>
             <button class="tab" data-tab="register" type="button">Register</button>
           </div>
-
+  
           <div id="alert" class="alert hidden"></div>
-
+  
           <form id="loginForm" class="form">
             <label>
               <span>Email</span>
               <input type="email" name="email" placeholder="you@company.com" required />
             </label>
-
+  
             <label>
               <span>Password</span>
               <input type="password" name="password" placeholder="••••••••" required />
             </label>
-
+  
             <button class="btn btn-primary" type="submit">Login</button>
-
+  
             <label>
               <span>Choose role for Google login</span>
               <select id="googleRole" class="input">
@@ -67,29 +53,29 @@
                 <option value="Employee">Employee</option>
               </select>
             </label>
-
+  
             <button id="googleBtn" class="google-btn" type="button">
               <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" />
               Continue with Google
             </button>
           </form>
-
+  
           <form id="registerForm" class="form hidden">
             <label>
               <span>Name</span>
               <input type="text" name="name" placeholder="Full name" />
             </label>
-
+  
             <label>
               <span>Email</span>
               <input type="email" name="email" placeholder="you@company.com" required />
             </label>
-
+  
             <label>
               <span>Password</span>
               <input type="password" name="password" placeholder="Create a password" required />
             </label>
-
+  
             <label>
               <span>Role</span>
               <select name="role" required>
@@ -98,62 +84,31 @@
                 <option value="HR">HR</option>
               </select>
             </label>
-
+  
             <button class="btn btn-primary" type="submit">Create account</button>
           </form>
-
-          
-        <!-- RIGHT: WELCOME PANEL -->
-        <div class="auth-right">
-          <div class="auth-quote-wrap">
-            <div class="auth-mini-badge">Smart Hiring • Better Decisions</div>
-            <h1 class="auth-quote-title">
-              <span id="authTypewriter"></span><span class="type-caret">|</span>
-            </h1>
-            <p class="auth-quote-text">
-              Elevate hiring with an intelligent recruitment experience designed for speed,
-              clarity, and confident decision-making. From AI-powered screening to interviews,
-              employee tasks, and performance insights — everything lives in one refined platform.
+        </div>
+  
+        <!-- RIGHT SIDE -->
+        <div class="auth-hero">
+          <div class="hero-card">
+            <div class="hero-chip">Smart Hiring • Better Decisions</div>
+            <h1 class="hero-title">Welcome to HREC.</h1>
+            <p class="hero-subtitle">
+              Elevate hiring with an intelligent recruitment experience built for HR teams,
+              candidates, and employees.
             </p>
-
-            <div class="auth-feature-list">
-              <div class="auth-feature-item">AI Resume Analysis</div>
-              <div class="auth-feature-item">Interview Assistance</div>
-              <div class="auth-feature-item">Task & Performance Tracking</div>
-              <div class="auth-feature-item">Role-based Smart Dashboard</div>
+  
+            <div class="hero-points">
+              <div class="hero-point"><div class="hero-dot"></div><span>AI-powered resume analysis</span></div>
+              <div class="hero-point"><div class="hero-dot"></div><span>Role-based dashboards</span></div>
+              <div class="hero-point"><div class="hero-dot"></div><span>Interview scoring & insights</span></div>
             </div>
           </div>
         </div>
       </div>
     </div>
-
-    <script src="script.js"></script>
-    <script>
-      function runTypewriter() {
-        const el = document.getElementById("authTypewriter");
-        if (!el) return;
-    
-        const text = "Welcome to HREC.";
-        let i = 0;
-        el.textContent = "";
-    
-        const tick = () => {
-          if (i < text.length) {
-            el.textContent += text.charAt(i);
-            i += 1;
-            setTimeout(tick, 85);
-          }
-        };
-    
-        tick();
-      }
-    
-      window.addEventListener("load", () => {
-        setTimeout(() => {
-          document.getElementById("authCard")?.classList.add("auth-card-show");
-          setTimeout(runTypewriter, 420);
-        }, 120);
-      });
-    </script>
+  
+    <script src="script.js?v=loginlayoutfinal1"></script>
   </body>
 </html>
