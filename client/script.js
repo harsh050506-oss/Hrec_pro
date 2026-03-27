@@ -1510,26 +1510,6 @@ async function renderEmployeePerformance() {
     const feedback = r.feedback || "No feedback given yet.";
 
     wrap.innerHTML = `
-      <div class="kpi">
-        <div class="k">Score</div>
-        <div class="v">${escapeHtml(score)}</div>
-      </div>
-
-      <div class="kpi">
-        <div class="k">HR Rating</div>
-        <div class="v">${escapeHtml(hrRating)}</div>
-      </div>
-
-      <div class="kpi">
-        <div class="k">Tasks Completed</div>
-        <div class="v">${escapeHtml(completed)}</div>
-      </div>
-
-      <div class="kpi">
-        <div class="k">Tasks Pending</div>
-        <div class="v">${escapeHtml(pending)}</div>
-      </div>
-
       <div class="kpi" style="grid-column: 1 / -1;">
         <div class="k">HR Feedback</div>
         <div class="v" style="font-size:16px; font-weight:600; margin-top:8px;">
@@ -1543,12 +1523,6 @@ async function renderEmployeePerformance() {
         hrecEmpPerfChartInstance.destroy();
         hrecEmpPerfChartInstance = null;
       }
-
-      const ctx = chartCanvas.getContext("2d");
-
-      const barGradient = ctx.createLinearGradient(0, 0, 0, 320);
-      barGradient.addColorStop(0, "rgba(56, 189, 248, 0.95)");
-      barGradient.addColorStop(1, "rgba(37, 99, 235, 0.75)");
 
       hrecEmpPerfChartInstance = new Chart(chartCanvas, {
         type: "bar",
@@ -1621,22 +1595,7 @@ async function renderEmployeePerformance() {
               }
             }
           }
-        },
-        plugins: [
-          {
-            id: "empBarShadow",
-            beforeDatasetsDraw(chart) {
-              const { ctx } = chart;
-              ctx.save();
-              ctx.shadowColor = "rgba(59,130,246,0.25)";
-              ctx.shadowBlur = 16;
-              ctx.shadowOffsetY = 8;
-            },
-            afterDatasetsDraw(chart) {
-              chart.ctx.restore();
-            }
-          }
-        ]
+        }
       });
     }
   } catch (err) {
@@ -1667,20 +1626,22 @@ async function renderEmployeeTasks() {
       <table>
         <thead>
           <tr>
-            <th>Task ID</th>
-            <th>Title</th>
+            <th>Task Title</th>
+            <th>Description</th>
             <th>Status</th>
-            <th>Feedback</th>
+            <th>HR Feedback</th>
+            <th>Updated</th>
             <th>Action</th>
           </tr>
         </thead>
         <tbody>
           ${tasks.map((t) => `
             <tr>
-              <td class="muted">${escapeHtml(t.id || "—")}</td>
-              <td>${escapeHtml(t.title || "—")}</td>
+              <td><b>${escapeHtml(t.title || "—")}</b></td>
+              <td>${escapeHtml(t.description || "—")}</td>
               <td>${recommendationBadge(t.status || "Pending")}</td>
               <td>${escapeHtml(t.hr_feedback || "—")}</td>
+              <td class="muted">${escapeHtml(t.updated_at ? String(t.updated_at).slice(0, 19).replace("T", " ") : "—")}</td>
               <td>
                 <div class="row wrap">
                   <button class="btn btn-ghost" data-task-status="${t.id}" data-status-to="Pending" type="button">Pending</button>
@@ -1705,6 +1666,7 @@ async function renderEmployeeTasks() {
           });
           setAlert(`Task marked ${btn.dataset.statusTo}`, "ok");
           await renderEmployeeTasks();
+          await renderEmployeePerformance();
         } catch (err) {
           setAlert(err.message || "Failed to update task");
         }
