@@ -14,6 +14,31 @@ from utils.validation import require_fields, now_utc
 interviews_bp = Blueprint("interviews", __name__)
 
 
+def apply_fair_score_boost(answer, raw_score):
+    score = int(raw_score or 0)
+    words = len((answer or "").strip().split())
+
+    # fair boost for detailed answers
+    if words > 20 and score < 50:
+        score += 10
+    elif words > 10 and score < 40:
+        score += 5
+
+    return min(score, 100)
+
+
+def decide_final_recommendation(total_score):
+    total_score = int(total_score or 0)
+
+    # minimum rejection threshold = below 30 only
+    if total_score >= 50:
+        return "Accepted"
+    elif total_score >= 30:
+        return "Review"
+    else:
+        return "Rejected"
+
+
 @interviews_bp.post("/start")
 @require_auth(roles=["Candidate"])
 def start_interview():
@@ -31,7 +56,12 @@ def start_interview():
     if not job:
         return jsonify({"error": "Job missing"}), 400
 
-    questions = generate_questions_hybrid(job.get("title", ""), job.get("description", ""), job.get("skills", []))
+    questions = generate_questions_hybrid(
+        job.get("title", ""),
+        job.get("description", ""),
+        job.get("skills", []),
+    )
+
     interview = {
         "application_id": app["_id"],
         "job_id": app["job_id"],
@@ -70,26 +100,32 @@ def submit_answer():
     if idx < 0 or idx >= len(questions):
         return jsonify({"error": "Invalid index"}), 400
 
-    # Basic scoring: use job skills as expected keywords
     job = db.jobs.find_one({"_id": interview["job_id"]}) or {}
     expected = job.get("skills", [])
 
     question_text = (questions[idx] or {}).get("q", "")
+    answer_text = (data["answer"] or "").strip()
+
     res = score_answer_hybrid(
         job_title=job.get("title", ""),
         job_description=job.get("description", ""),
         job_skills=expected,
         question=question_text,
-        answer=data["answer"],
+        answer=answer_text,
     )
-    score = int(res.get("score") or 0)
+
+    raw_score = int(res.get("score") or 0)
+    score = apply_fair_score_boost(answer_text, raw_score)
     feedback = str(res.get("feedback") or "")
 
-    questions[idx]["a"] = (data["answer"] or "").strip()
+    # helpful feedback override for detailed answers that still scored low
+    if len(answer_text.split()) > 20 and score >= 30 and not feedback:
+        feedback = "Answer is detailed and relevant, but can be improved with more direct role-specific points."
+
+    questions[idx]["a"] = answer_text
     questions[idx]["score"] = score
     questions[idx]["feedback"] = feedback
 
-    # recompute totals if all answered
     scored = [q.get("score") for q in questions if q.get("score") is not None]
     total = int(round(sum(scored) / len(scored))) if scored else None
 
@@ -115,45 +151,63 @@ def finish():
     if not interview or str(interview["candidate_id"]) != g.user["_id"]:
         return jsonify({"error": "Interview not found"}), 404
 
-    db.interviews.update_one({"_id": interview["_id"]}, {"$set": {"status": "Completed", "updated_at": now_utc()}})
+    db.interviews.update_one(
+        {"_id": interview["_id"]},
+        {"$set": {"status": "Completed", "updated_at": now_utc()}},
+    )
     interview = db.interviews.find_one({"_id": interview["_id"]})
 
     job = db.jobs.find_one({"_id": interview["job_id"]}) or {}
     app = db.applications.find_one({"_id": interview.get("application_id")}) if interview.get("application_id") else None
     resume_score = app.get("resume_score") if app else None
 
+    total_score = int(interview.get("total_score") or 0)
+
     final = generate_interview_final_hybrid(
         job_title=job.get("title", ""),
         job_description=job.get("description", ""),
         job_skills=job.get("skills", []),
         questions=interview.get("questions", []),
-        total_score=interview.get("total_score"),
+        total_score=total_score,
         resume_score=resume_score,
     )
+
+    final_summary = final.get("final_summary", "") or ""
+    final_recommendation = decide_final_recommendation(total_score)
+
+    # Make summary align with your minimum-score rule
+    if total_score >= 50:
+        prefix = "Candidate performed well overall."
+    elif total_score >= 30:
+        prefix = "Candidate shows potential and should be reviewed, not rejected."
+    else:
+        prefix = "Candidate needs improvement before moving ahead."
+
+    if final_summary:
+        final_summary = f"{prefix} {final_summary}"
+    else:
+        final_summary = prefix
 
     db.interviews.update_one(
         {"_id": interview["_id"]},
         {
             "$set": {
-                "final_summary": final.get("final_summary", ""),
-                "final_recommendation": final.get("final_recommendation", "review"),
+                "final_summary": final_summary,
+                "final_recommendation": final_recommendation,
                 "updated_at": now_utc(),
             }
         },
     )
     interview = db.interviews.find_one({"_id": interview["_id"]})
 
-    # attach score into application
     if interview.get("application_id"):
-        final_summary = interview.get("final_summary")
-        final_recommendation = interview.get("final_recommendation")
         db.applications.update_one(
             {"_id": interview["application_id"]},
             {
                 "$set": {
                     "interview.score": interview.get("total_score"),
-                    "interview.final_summary": final_summary,
-                    "interview.final_recommendation": final_recommendation,
+                    "interview.final_summary": interview.get("final_summary"),
+                    "interview.final_recommendation": interview.get("final_recommendation"),
                     "updated_at": now_utc(),
                 }
             },
@@ -167,7 +221,9 @@ def finish():
 def list_interviews():
     db = init_db()
     query = {}
+
     if g.user["role"] == "Candidate":
         query["candidate_id"] = ObjectId(g.user["_id"])
+
     items = list(db.interviews.find(query).sort("created_at", -1).limit(200))
     return jsonify({"interviews": [doc_to_json(i) for i in items]})
