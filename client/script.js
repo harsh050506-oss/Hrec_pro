@@ -1739,22 +1739,23 @@ async function initDashboard() {
     }
   }
 
-  const logoutBtn = qs("#logoutBtn");
-  if (logoutBtn && !logoutBtn.dataset.bound) {
-    logoutBtn.dataset.bound = "1";
-    logoutBtn.addEventListener("click", () => {
-      clearSession();
-      location.href = "index.html";
-    });
+  function doLogout() {
+    localStorage.removeItem("hrec_token");
+    localStorage.removeItem("hrec_user");
+  
+    // force redirect (prevents weird cache issues)
+    window.location.href = "index.html";
   }
-
+  
+  // bind directly (no dataset logic)
+  const logoutBtn = qs("#logoutBtn");
+  if (logoutBtn) {
+    logoutBtn.onclick = doLogout;
+  }
+  
   const profileLogoutBtn = qs("#profileLogoutBtn");
-  if (profileLogoutBtn && !profileLogoutBtn.dataset.bound) {
-    profileLogoutBtn.dataset.bound = "1";
-    profileLogoutBtn.addEventListener("click", () => {
-      clearSession();
-      location.href = "index.html";
-    });
+  if (profileLogoutBtn) {
+    profileLogoutBtn.onclick = doLogout;
   }
 
   const profileMini = qs("#profileMini");
