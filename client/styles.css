@@ -2226,3 +2226,7 @@ body.theme-light .auth-feature-item:hover {
   width: 100% !important;
   height: 340px !important;
 }
+#empPerfChart {
+  width: 100% !important;
+  height: 320px !important;
+}

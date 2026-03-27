@@ -1524,30 +1524,29 @@ async function renderEmployeePerformance() {
         hrecEmpPerfChartInstance = null;
       }
 
+      const ctx = chartCanvas.getContext("2d");
+
+      const fillGradient = ctx.createLinearGradient(0, 0, 0, 300);
+      fillGradient.addColorStop(0, "rgba(56, 189, 248, 0.35)");
+      fillGradient.addColorStop(1, "rgba(139, 92, 246, 0.12)");
+
       hrecEmpPerfChartInstance = new Chart(chartCanvas, {
-        type: "bar",
+        type: "radar",
         data: {
-          labels: ["Score", "HR Rating", "Tasks Completed", "Tasks Pending"],
+          labels: ["Overall Score", "HR Rating", "Tasks Completed", "Tasks Pending"],
           datasets: [
             {
               label: "My Performance",
               data: [score, hrRating, completed, pending],
-              backgroundColor: [
-                "rgba(139,92,246,0.85)",
-                "rgba(59,130,246,0.85)",
-                "rgba(34,197,94,0.85)",
-                "rgba(245,158,11,0.85)"
-              ],
-              borderColor: [
-                "#8b5cf6",
-                "#3b82f6",
-                "#22c55e",
-                "#f59e0b"
-              ],
-              borderWidth: 2,
-              borderRadius: 14,
-              borderSkipped: false,
-              maxBarThickness: 58
+              backgroundColor: fillGradient,
+              borderColor: "#38bdf8",
+              pointBackgroundColor: ["#8b5cf6", "#3b82f6", "#22c55e", "#f59e0b"],
+              pointBorderColor: "#ffffff",
+              pointHoverBackgroundColor: "#ffffff",
+              pointHoverBorderColor: "#38bdf8",
+              pointRadius: 5,
+              pointHoverRadius: 7,
+              borderWidth: 3
             }
           ]
         },
@@ -1555,7 +1554,7 @@ async function renderEmployeePerformance() {
           responsive: true,
           maintainAspectRatio: false,
           animation: {
-            duration: 1400,
+            duration: 1500,
             easing: "easeOutQuart"
           },
           plugins: {
@@ -1572,30 +1571,45 @@ async function renderEmployeePerformance() {
             }
           },
           scales: {
-            x: {
-              ticks: {
+            r: {
+              min: 0,
+              max: 100,
+              angleLines: {
+                color: "rgba(148,163,184,0.18)"
+              },
+              grid: {
+                color: "rgba(148,163,184,0.16)"
+              },
+              pointLabels: {
                 color: "#cbd5e1",
                 font: {
                   size: 12,
                   weight: "600"
                 }
               },
-              grid: {
-                display: false
-              }
-            },
-            y: {
-              beginAtZero: true,
-              max: 100,
               ticks: {
-                color: "#94a3b8"
-              },
-              grid: {
-                color: "rgba(148,163,184,0.12)"
+                color: "#94a3b8",
+                backdropColor: "transparent",
+                stepSize: 20
               }
             }
           }
-        }
+        },
+        plugins: [
+          {
+            id: "empRadarGlow",
+            beforeDatasetsDraw(chart) {
+              const { ctx } = chart;
+              ctx.save();
+              ctx.shadowColor = "rgba(56,189,248,0.28)";
+              ctx.shadowBlur = 18;
+              ctx.shadowOffsetY = 4;
+            },
+            afterDatasetsDraw(chart) {
+              chart.ctx.restore();
+            }
+          }
+        ]
       });
     }
   } catch (err) {
