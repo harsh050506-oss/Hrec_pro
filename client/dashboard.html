@@ -146,7 +146,10 @@
               </div>
 
               <div class="card">
-                <div class="card-title">Performance chart</div>
+                <div class="row" style="justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                  <div class="card-title">Performance chart</div>
+                  <button class="btn btn-ghost" id="refreshPerf" type="button">Refresh</button>
+                </div>
                 <canvas id="perfChart" height="140"></canvas>
               </div>
             </div>
@@ -154,6 +157,10 @@
 
           <!-- HR: Analytics -->
           <div class="panel hidden" data-panel="hr_analytics">
+            <div class="row" style="justify-content: flex-end; margin-bottom: 12px;">
+              <button class="btn btn-ghost" id="refreshAnalytics" type="button">Refresh</button>
+            </div>
+
             <div class="grid-2">
               <div class="card">
                 <div class="card-title">Hiring funnel</div>
@@ -418,54 +425,55 @@
     </div>
 
     <div
-  id="scheduleModal"
-  class="hidden"
-  style="
-    display:none;
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,0.72);
-    z-index:999999;
-    padding:24px;
-    overflow:auto;
-  "
->
-  <div
-    class="candidate-detail-shell"
-    style="
-      width:min(460px, 94vw);
-      margin:80px auto;
-      padding:22px;
-      border-radius:22px;
-      position:relative;
-    "
-  >
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-      <div>
-        <div style="font-size:22px; font-weight:800;">Schedule Interview</div>
-        <div class="muted" style="margin-top:4px;">Select a date and time for the candidate interview.</div>
+      id="scheduleModal"
+      class="hidden"
+      style="
+        display:none;
+        position:fixed;
+        inset:0;
+        background:rgba(0,0,0,0.72);
+        z-index:999999;
+        padding:24px;
+        overflow:auto;
+      "
+    >
+      <div
+        class="candidate-detail-shell"
+        style="
+          width:min(460px, 94vw);
+          margin:80px auto;
+          padding:22px;
+          border-radius:22px;
+          position:relative;
+        "
+      >
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <div>
+            <div style="font-size:22px; font-weight:800;">Schedule Interview</div>
+            <div class="muted" style="margin-top:4px;">Select a date and time for the candidate interview.</div>
+          </div>
+          <button id="scheduleModalClose" class="btn btn-ghost" type="button">Close</button>
+        </div>
+
+        <div class="form">
+          <label>
+            <span>Interview Date & Time</span>
+            <input id="scheduleInterviewDateTime" type="datetime-local" />
+          </label>
+
+          <label>
+            <span>Optional Note</span>
+            <textarea id="scheduleInterviewNote" rows="3" placeholder="Add any note for the candidate..."></textarea>
+          </label>
+
+          <div class="row wrap" style="margin-top:6px;">
+            <button id="scheduleModalSave" class="btn btn-primary" type="button">Confirm Schedule</button>
+            <button id="scheduleModalCancel" class="btn btn-ghost" type="button">Cancel</button>
+          </div>
+        </div>
       </div>
-      <button id="scheduleModalClose" class="btn btn-ghost" type="button">Close</button>
     </div>
 
-    <div class="form">
-      <label>
-        <span>Interview Date & Time</span>
-        <input id="scheduleInterviewDateTime" type="datetime-local" />
-      </label>
-
-      <label>
-        <span>Optional Note</span>
-        <textarea id="scheduleInterviewNote" rows="3" placeholder="Add any note for the candidate..."></textarea>
-      </label>
-
-      <div class="row wrap" style="margin-top:6px;">
-        <button id="scheduleModalSave" class="btn btn-primary" type="button">Confirm Schedule</button>
-        <button id="scheduleModalCancel" class="btn btn-ghost" type="button">Cancel</button>
-      </div>
-    </div>
-  </div>
-</div>
     <script src="script.js?v=chartsfix4"></script>
   </body>
 </html>

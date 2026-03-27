@@ -129,20 +129,23 @@ function renderBadgeList(items = [], type = "default") {
 
 function parseAuthFromUrl() {
   const params = new URLSearchParams(window.location.search);
+
   const t = params.get("token");
   const name = params.get("name");
   const email = params.get("email");
   const role = params.get("role");
 
   if (t && email) {
+    console.log("Saving session from URL");
+
     setSession(t, {
       name: name || "",
       email,
       role: normalizeRole(role),
     });
 
-    const cleanUrl = `${window.location.origin}${window.location.pathname}`;
-    window.history.replaceState({}, document.title, cleanUrl);
+    // clean URL after saving
+    window.history.replaceState({}, document.title, window.location.pathname);
   }
 }
 
@@ -1207,6 +1210,12 @@ async function renderHrPerformance() {
   } catch (err) {
     console.error("Failed to load HR performance:", err);
   }
+
+  const refreshPerfBtn = qs("#refreshPerf");
+  if (refreshPerfBtn && refreshPerfBtn.dataset.bound !== "1") {
+    refreshPerfBtn.dataset.bound = "1";
+    refreshPerfBtn.addEventListener("click", renderHrPerformance);
+  }
 }
 
 /* ================= HR ANALYTICS ================= */
@@ -1463,83 +1472,11 @@ async function renderHrAnalytics() {
   } catch (err) {
     console.error("Analytics load failed:", err);
   }
-}
-/* ================= EMPLOYEE TASKS ================= */
 
-async function renderEmployeeTasks() {
-  const wrap = qs("#empTasksTable");
-  if (!wrap) return;
-
-  const status = qs("#empTaskFilter")?.value || "";
-  const params = new URLSearchParams();
-  if (status) params.set("status", status);
-
-  try {
-    const data = await api(`/api/tasks${params.toString() ? `?${params.toString()}` : ""}`);
-    const tasks = data.tasks || [];
-
-    wrap.innerHTML = tasks.length
-      ? `
-      <table>
-        <thead>
-          <tr>
-            <th>Task ID</th>
-            <th>Title</th>
-            <th>Status</th>
-            <th>Feedback</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${tasks.map((t) => `
-            <tr>
-              <td class="muted">${escapeHtml(t.id || "—")}</td>
-              <td>${escapeHtml(t.title || "—")}</td>
-              <td>${recommendationBadge(t.status || "Pending")}</td>
-              <td>${escapeHtml(t.hr_feedback || "—")}</td>
-              <td>
-                <div class="row wrap">
-                  <button class="btn btn-ghost" data-task-status="${t.id}" data-status-to="Pending" type="button">Pending</button>
-                  <button class="btn btn-ghost" data-task-status="${t.id}" data-status-to="Completed" type="button">Completed</button>
-                </div>
-              </td>
-            </tr>
-          `).join("")}
-        </tbody>
-      </table>
-      `
-      : `<div class="muted">No employee tasks found.</div>`;
-
-    wrap.querySelectorAll("[data-task-status]").forEach((btn) => {
-      if (btn.dataset.bound === "1") return;
-      btn.dataset.bound = "1";
-      btn.addEventListener("click", async () => {
-        try {
-          await api(`/api/tasks/${btn.dataset.taskStatus}`, {
-            method: "PATCH",
-            body: { status: btn.dataset.statusTo },
-          });
-          setAlert(`Task marked ${btn.dataset.statusTo}`, "ok");
-          await renderEmployeeTasks();
-        } catch (err) {
-          setAlert(err.message || "Failed to update task");
-        }
-      });
-    });
-  } catch (err) {
-    wrap.innerHTML = `<div class="muted">${escapeHtml(err.message || "Failed to load employee tasks")}</div>`;
-  }
-
-  const refreshBtn = qs("#empRefreshTasks");
-  if (refreshBtn && refreshBtn.dataset.bound !== "1") {
-    refreshBtn.dataset.bound = "1";
-    refreshBtn.addEventListener("click", renderEmployeeTasks);
-  }
-
-  const filter = qs("#empTaskFilter");
-  if (filter && filter.dataset.bound !== "1") {
-    filter.dataset.bound = "1";
-    filter.addEventListener("change", renderEmployeeTasks);
+  const refreshAnalyticsBtn = qs("#refreshAnalytics");
+  if (refreshAnalyticsBtn && refreshAnalyticsBtn.dataset.bound !== "1") {
+    refreshAnalyticsBtn.dataset.bound = "1";
+    refreshAnalyticsBtn.addEventListener("click", renderHrAnalytics);
   }
 }
 
@@ -1595,6 +1532,7 @@ async function initDashboard() {
   parseAuthFromUrl();
 
   if (!token()) {
+    console.error("No token found → redirecting to login");
     location.href = "index.html";
     return;
   }
