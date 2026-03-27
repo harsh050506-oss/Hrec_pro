@@ -1247,75 +1247,51 @@ async function renderHrAnalytics() {
     const perfRows = perf.performance || [];
 
     /* ================= FUNNEL 3D DOUGHNUT ================= */
+    /* ================= FUNNEL PREMIUM LINE CHART ================= */
     const funnelCtx = funnelCanvas.getContext("2d");
-
-    const funnelGradients = [
-      funnelCtx.createLinearGradient(0, 0, 0, 300),
-      funnelCtx.createLinearGradient(0, 0, 0, 300),
-      funnelCtx.createLinearGradient(0, 0, 0, 300)
-    ];
-
-    funnelGradients[0].addColorStop(0, "#8b5cf6");
-    funnelGradients[0].addColorStop(1, "#6366f1");
-
-    funnelGradients[1].addColorStop(0, "#22c55e");
-    funnelGradients[1].addColorStop(1, "#16a34a");
-
-    funnelGradients[2].addColorStop(0, "#f59e0b");
-    funnelGradients[2].addColorStop(1, "#ef4444");
-
-    const funnelDepthColors = [
-      "rgba(76,29,149,0.60)",
-      "rgba(21,128,61,0.60)",
-      "rgba(180,83,9,0.60)"
-    ];
 
     const funnelLabels = Object.keys(funnelData);
     const funnelValues = Object.values(funnelData).map((v) => Number(v || 0));
 
+    const lineGradient = funnelCtx.createLinearGradient(0, 0, 0, 320);
+    lineGradient.addColorStop(0, "rgba(139, 92, 246, 0.40)");
+    lineGradient.addColorStop(1, "rgba(59, 130, 246, 0.05)");
+
     hrecFunnelChartInstance = new Chart(funnelCanvas, {
-      type: "doughnut",
+      type: "line",
       data: {
         labels: funnelLabels,
         datasets: [
           {
             label: "Applications",
             data: funnelValues,
-            backgroundColor: funnelGradients,
-            borderColor: "rgba(255,255,255,0.18)",
-            borderWidth: 2,
-            hoverOffset: 16,
-            spacing: 4
-          },
-          {
-            label: "Depth",
-            data: funnelValues,
-            backgroundColor: funnelDepthColors,
-            borderWidth: 0,
-            hoverOffset: 0,
-            spacing: 4,
-            weight: 0.35
+            borderColor: "#8b5cf6",
+            backgroundColor: lineGradient,
+            fill: true,
+            tension: 0.42,
+            borderWidth: 4,
+            pointRadius: 5,
+            pointHoverRadius: 7,
+            pointBackgroundColor: ["#8b5cf6", "#22c55e", "#f59e0b", "#3b82f6"],
+            pointBorderColor: "#ffffff",
+            pointHoverBackgroundColor: "#ffffff",
+            pointHoverBorderColor: "#8b5cf6"
           }
         ]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        cutout: "54%",
-        rotation: -90,
         animation: {
-          animateRotate: true,
-          animateScale: true,
           duration: 1600,
           easing: "easeOutQuart"
         },
         plugins: {
           legend: {
             display: true,
-            position: "bottom",
+            position: "top",
             labels: {
               color: "#cbd5e1",
-              padding: 18,
               usePointStyle: true,
               pointStyle: "circle",
               font: {
@@ -1332,33 +1308,43 @@ async function renderHrAnalytics() {
             borderWidth: 1,
             padding: 12
           }
+        },
+        scales: {
+          x: {
+            ticks: {
+              color: "#cbd5e1",
+              font: {
+                size: 12,
+                weight: "600"
+              }
+            },
+            grid: {
+              color: "rgba(148,163,184,0.08)"
+            }
+          },
+          y: {
+            beginAtZero: true,
+            ticks: {
+              color: "#94a3b8"
+            },
+            grid: {
+              color: "rgba(148,163,184,0.12)"
+            }
+          }
         }
       },
       plugins: [
         {
-          id: "funnelCenterText",
-          afterDraw(chart) {
-            const meta = chart.getDatasetMeta(0);
-            if (!meta?.data?.length) return;
-
-            const total = funnelValues.reduce((a, b) => a + b, 0);
-            const x = meta.data[0].x;
-            const y = meta.data[0].y;
-            const c = chart.ctx;
-
-            c.save();
-            c.textAlign = "center";
-            c.textBaseline = "middle";
-
-            c.font = "700 26px Inter, sans-serif";
-            c.fillStyle = "#ffffff";
-            c.fillText(`${total}`, x, y - 8);
-
-            c.font = "500 13px Inter, sans-serif";
-            c.fillStyle = "#94a3b8";
-            c.fillText("Total Applications", x, y + 18);
-
-            c.restore();
+          id: "funnelLineGlow",
+          beforeDatasetsDraw(chart) {
+            const { ctx } = chart;
+            ctx.save();
+            ctx.shadowColor = "rgba(139, 92, 246, 0.35)";
+            ctx.shadowBlur = 18;
+            ctx.shadowOffsetY = 6;
+          },
+          afterDatasetsDraw(chart) {
+            chart.ctx.restore();
           }
         }
       ]
