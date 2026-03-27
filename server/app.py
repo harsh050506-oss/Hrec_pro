@@ -170,7 +170,8 @@ def create_app():
             }
         )
 
-        return redirect(f"http://127.0.0.1:5000/dashboard.html?{query}")
+        BASE_URL = os.getenv("BASE_URL", "http://127.0.0.1:5000")
+        return redirect(f"{BASE_URL}/dashboard.html?{query}")
 
     client_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "client"))
 
